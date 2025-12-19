@@ -489,6 +489,14 @@
             </svg>
             Arch Linux (.pkg.tar.zst)
           </a>
+          <a href="#" class="dropdown-item" id="macLink">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" />
+              <path d="M12 17v-5m0-4h.01" />
+            </svg>
+            macOS (Universal) (.dmg)
+          </a>
         </div>
       </div>
 
@@ -604,6 +612,8 @@
       const winLink = document.getElementById('winLink');
       const debLink = document.getElementById('debLink');
       const archLink = document.getElementById('archLink');
+      const macLink = document.getElementById('macLink');
+      const mainDownloadBtn = document.getElementById('mainDownloadBtn');
       const versionText = document.getElementById('versionText');
       const versionBadge = document.getElementById('versionInfo');
 
@@ -628,17 +638,29 @@
           versionBadge.classList.remove('hidden');
 
 
-          const winAsset = relData.assets.find(a => a.name.toLowerCase().endsWith('.exe') || a.name.toLowerCase().endsWith('.msi'));
+          const winAsset = relData.assets.find(a => a.name.toLowerCase().endsWith('.exe'));
           const debAsset = relData.assets.find(a => a.name.toLowerCase().endsWith('.deb'));
-
-
           const archAsset = relData.assets.find(a => a.name.toLowerCase().includes('arch') || a.name.toLowerCase().endsWith('.pkg.tar.zst'));
+          const macAsset = relData.assets.find(a => a.name.toLowerCase().includes('macos') && a.name.toLowerCase().endsWith('.dmg'));
 
           if (winAsset) winLink.href = winAsset.browser_download_url;
-
           if (debAsset) debLink.href = debAsset.browser_download_url;
-
           if (archAsset) archLink.href = archAsset.browser_download_url;
+          if (macAsset) macLink.href = macAsset.browser_download_url;
+
+          const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+          const isWin = navigator.platform.toUpperCase().indexOf('WIN') >= 0;
+
+          if (isMac && macAsset) {
+            mainDownloadBtn.href = macAsset.browser_download_url;
+            mainDownloadBtn.innerHTML = 'Download for macOS <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
+          } else if (isWin && winAsset) {
+            mainDownloadBtn.href = winAsset.browser_download_url;
+            mainDownloadBtn.innerHTML = 'Download for Windows <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
+          } else if (debAsset) {
+            mainDownloadBtn.href = debAsset.browser_download_url;
+            mainDownloadBtn.innerHTML = 'Download for Linux <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
+          }
 
         } else {
           versionText.textContent = 'Latest';
