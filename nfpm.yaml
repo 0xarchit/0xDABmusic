@@ -1,0 +1,29 @@
+name: "0xDABmusic"
+arch: "amd64"
+platform: "linux"
+version: "${VERSION}"
+section: "utils"
+priority: "optional"
+maintainer: "0xarchit <0xarchit@gmail.com>"
+description: "0xDABmusic Music Library Manager"
+vendor: "0xDABmusic"
+homepage: "https://github.com/0xArchit/0xDABmusic"
+license: "MIT"
+
+contents:
+  - src: "./build/bin/0xDABmusic"
+    dst: "/usr/bin/0xDABmusic"
+  - src: "./assets/appicon.png"
+    dst: "/usr/share/icons/hicolor/512x512/apps/0xDABmusic.png"
+  - src: "./0xDABmusic.desktop"
+    dst: "/usr/share/applications/0xDABmusic.desktop"
+
+overrides:
+  deb:
+    depends:
+      - libgtk-3-0
+      - libwebkit2gtk-4.0-37
+  archlinux:
+    depends:
+      - gtk3
+      - webkit2gtk

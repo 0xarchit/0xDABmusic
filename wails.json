@@ -1,0 +1,29 @@
+{
+    "$schema": "https://wails.io/schemas/config.v2.json",
+    "author": {
+        "email": "0xarchit@gmail.com",
+        "name": "0xarchit"
+    },
+    "frontend:build": "npm run build",
+    "frontend:dev:serverUrl": "auto",
+    "frontend:dev:watcher": "npm run dev",
+    "frontend:install": "npm install",
+    "info": {
+        "companyName": "0xDABmusic",
+        "copyright": "Copyright 2025",
+        "productName": "0xDABmusic",
+        "productVersion": "3.0.1"
+    },
+    "name": "0xDABmusic",
+    "outputfilename": "0xDABmusic",
+    "version": "2",
+    "windows": {
+        "icon": "assets/appicon.ico"
+    },
+    "linux": {
+        "icon": "assets/appicon.png"
+    },
+    "darwin": {
+        "icon": "assets/appicon.png"
+    }
+}

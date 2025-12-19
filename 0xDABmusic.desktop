@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=0xDABmusic
+Comment=0xDABmusic Music Library Manager
+Exec=/usr/bin/0xDABmusic
+Icon=0xDABmusic
+Terminal=false
+Type=Application
+Categories=Utility;Audio;
