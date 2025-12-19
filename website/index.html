@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>0xDABmusic - Next Gen Music Player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="logo.png">
+  <style>
+    :root {
+      --bg-color: #050505;
+      --card-bg: #111;
+      --text-primary: #ffffff;
+      --text-secondary: #9ca3af;
+      --accent-color: #06b6d4;
+      --accent-hover: #0891b2;
+      --gradient-start: #22d3ee;
+      --gradient-end: #3b82f6;
+      --cursor-size: 20px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      cursor: none;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .cursor {
+      width: var(--cursor-size);
+      height: var(--cursor-size);
+      border: 2px solid var(--accent-color);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.1s ease, background-color 0.2s;
+      mix-blend-mode: difference;
+    }
+
+    .cursor-follower {
+      width: 8px;
+      height: 8px;
+      background: var(--gradient-end);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: left 0.15s ease-out, top 0.15s ease-out;
+    }
+
+    a:hover~.cursor,
+    button:hover~.cursor,
+    .feature-card:hover~.cursor {
+      transform: translate(-50%, -50%) scale(1.5);
+      background-color: rgba(6, 182, 212, 0.2);
+    }
+
+    .glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, rgba(10, 10, 10, 0) 70%);
+      border-radius: 50%;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: -1;
+      pointer-events: none;
+      animation: pulseGlow 5s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      from {
+        opacity: 0.5;
+        transform: translateX(-50%) scale(0.8);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) scale(1.1);
+      }
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      position: relative;
+    }
+
+    header {
+      padding: 40px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .logo img {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+    }
+
+    .star-tracker {
+      position: absolute;
+      top: 40px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 16px;
+      border-radius: 20px;
+      text-decoration: none;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    .star-tracker:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+
+    .hero {
+      padding: 100px 0 60px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #fff 0%, #bae6fd 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto 48px;
+      animation: fadeInUp 0.8s ease-out 0.2s backwards;
+    }
+
+    .download-container {
+      position: relative;
+      display: inline-block;
+      animation: fadeInUp 0.8s ease-out 0.4s backwards;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+      color: white;
+      padding: 16px 32px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 20px -5px rgba(6, 182, 212, 0.5);
+      cursor: none;
+    }
+
+    .download-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px -5px rgba(6, 182, 212, 0.7);
+      filter: brightness(1.1);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 200px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+    }
+
+    .download-container:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+      cursor: none;
+    }
+
+    .dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    .features {
+      margin-top: 60px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      animation: fadeInUp 1s ease-out 0.6s backwards;
+    }
+
+    .feature-card {
+      background: rgba(22, 22, 22, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(6, 182, 212, 0.3);
+      background: rgba(22, 22, 22, 0.8);
+      box-shadow: 0 10px 30px -10px rgba(6, 182, 212, 0.2);
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      color: var(--accent-color);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .feature-icon svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .feature-card h3 {
+      margin-bottom: 12px;
+      font-size: 1.25rem;
+    }
+
+    .feature-card p {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .version-badge {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: fadeInUp 0.8s ease-out 0.6s backwards;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    footer {
+      margin-top: 80px;
+      padding: 40px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .footer-links a {
+      color: var(--text-secondary);
+      margin: 0 15px;
+      text-decoration: none;
+      transition: color 0.2s;
+      cursor: none;
+    }
+
+    .footer-links a:hover {
+      color: var(--text-primary);
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      display: none;
+      margin-left: 5px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+
+      .cursor,
+      .cursor-follower {
+        display: none !important;
+      }
+
+      * {
+        cursor: auto !important;
+      }
+
+      .container {
+        padding: 0 15px;
+        width: 100%;
+        overflow-x: hidden;
+      }
+
+      .hero h1 {
+        font-size: 2.5rem;
+        word-wrap: break-word;
+      }
+
+      .hero p {
+        font-size: 1rem;
+        padding: 0 10px;
+      }
+
+      header {
+        padding: 20px 0;
+      }
+
+      .star-tracker {
+        position: relative;
+        top: 0;
+        right: 0;
+        margin-top: 10px;
+        display: inline-flex;
+      }
+
+      header {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .glow {
+        width: 100%;
+        height: 400px;
+        top: -100px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="cursor"></div>
+  <div class="cursor-follower"></div>
+  <div class="glow"></div>
+
+  <div class="container">
+    <header>
+      <a href="#" class="logo">
+        <img src="logo.png" alt="0xDABmusic Logo">
+        <span>0xDABmusic</span>
+      </a>
+      <a href="https://github.com/0xarchit/0xDABmusic" target="_blank" class="star-tracker">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="star-icon">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+            fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span id="starCount">...</span> Stars
+      </a>
+    </header>
+
+    <section class="hero">
+      <h1>Experience Music<br>Like Never Before.</h1>
+      <p>A client for DAB music for download, convert, enjoy your library All in one! Enjoy studio quality music with
+        DAB!.</p>
+
+      <div class="download-container">
+        <a href="#" class="download-btn" id="mainDownloadBtn">
+          Download for Free
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </a>
+        <div class="dropdown-menu" id="downloadDropdown">
+          <a href="#" class="dropdown-item" id="winLink">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6h-7V3h7v3zm0 5h-7v-3h7v3zm0 5h-7v-3h7v3zm0 5h-7v-3h7v3zM9 22V2H3v20h6z" />
+            </svg>
+            Windows (.exe)
+          </a>
+          <a href="#" class="dropdown-item" id="debLink">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M8.56 12.69a3 3 0 1 0 5-1.5 5 5 0 0 0 7.3 1.8" />
+              <path d="M12 2a10 10 0 1 0 10 10H12V2z" transform="rotate(45 12 12)" />
+            </svg>
+            Ubuntu (.deb)
+          </a>
+          <a href="#" class="dropdown-item" id="archLink">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 22h20L12 2zm0 4l6.5 13h-13L12 6z" />
+            </svg>
+            Arch Linux (.pkg.tar.zst)
+          </a>
+        </div>
+      </div>
+
+      <br>
+      <div id="versionInfo" class="version-badge hidden">
+        Latest Version: <span id="versionText">Loading...</span>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+        </div>
+        <h3>Studio Quality</h3>
+        <p>Enjoy music in the highest quality possible. FLAC support and high-fidelity playback engine.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <h3>Lightning Fast</h3>
+        <p>Built with Golang and Wails for native performance. Lightweight and responsive.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </div>
+        <h3>Convert & Download</h3>
+        <p>Download your favorite tracks or convert your existing spotify or youtube playlist to DAB.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <h3>Ad-Free Logic</h3>
+        <p>A pure listening experience. No interruptions, just you and your music.</p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-links">
+        <a href="https://github.com/0xarchit/0xDABmusic" target="_blank">GitHub</a>
+        <a href="https://github.com/0xarchit/0xDABmusic/releases" target="_blank">Releases</a>
+        <a href="https://github.com/0xarchit/0xDABmusic/issues" target="_blank">Report Issue</a>
+      </div>
+      <p style="margin-top: 20px;">&copy; 2025 0xDABmusic. Open Source.</p>
+    </footer>
+  </div>
+
+  <script>
+
+    const cursor = document.querySelector('.cursor');
+    const follower = document.querySelector('.cursor-follower');
+    let mouseX = 0, mouseY = 0;
+    let followerX = 0, followerY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+
+      cursor.style.left = mouseX + 'px';
+      cursor.style.top = mouseY + 'px';
+    });
+
+    function animateFollower() {
+
+      followerX += (mouseX - followerX) * 0.1;
+      followerY += (mouseY - followerY) * 0.1;
+
+      follower.style.left = followerX + 'px';
+      follower.style.top = followerY + 'px';
+
+      requestAnimationFrame(animateFollower);
+    }
+    animateFollower();
+
+    document.querySelectorAll('a, button, .feature-card, .download-btn, .dropdown-item').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.transform = 'translate(-50%, -50%) scale(1.8)';
+        cursor.style.borderColor = 'transparent';
+        cursor.style.backgroundColor = 'rgba(124, 58, 237, 0.1)';
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.style.transform = 'translate(-50%, -50%) scale(1)';
+        cursor.style.borderColor = 'var(--accent-color)';
+        cursor.style.backgroundColor = 'transparent';
+      });
+    });
+
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const repoOwner = '0xarchit';
+      const repoName = '0xDABmusic';
+      const starCountEl = document.getElementById('starCount');
+      const winLink = document.getElementById('winLink');
+      const debLink = document.getElementById('debLink');
+      const archLink = document.getElementById('archLink');
+      const versionText = document.getElementById('versionText');
+      const versionBadge = document.getElementById('versionInfo');
+
+
+      try {
+        const repoRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}`);
+        if (repoRes.ok) {
+          const repoData = await repoRes.json();
+          starCountEl.textContent = repoData.stargazers_count;
+        }
+      } catch (e) {
+        console.error('Star fetch failed', e);
+        starCountEl.textContent = '-';
+      }
+
+
+      try {
+        const relRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
+        if (relRes.ok) {
+          const relData = await relRes.json();
+          versionText.textContent = relData.tag_name;
+          versionBadge.classList.remove('hidden');
+
+
+          const winAsset = relData.assets.find(a => a.name.toLowerCase().endsWith('.exe') || a.name.toLowerCase().endsWith('.msi'));
+          const debAsset = relData.assets.find(a => a.name.toLowerCase().endsWith('.deb'));
+
+
+          const archAsset = relData.assets.find(a => a.name.toLowerCase().includes('arch') || a.name.toLowerCase().endsWith('.pkg.tar.zst'));
+
+          if (winAsset) winLink.href = winAsset.browser_download_url;
+
+          if (debAsset) debLink.href = debAsset.browser_download_url;
+
+          if (archAsset) archLink.href = archAsset.browser_download_url;
+
+        } else {
+          versionText.textContent = 'Latest';
+        }
+      } catch (e) {
+        console.error('Release fetch failed', e);
+      }
+    });
+  </script>
+</body>
+
+</html>
