@@ -12,8 +12,15 @@ cd "$(dirname "$0")"
 command -v go >/dev/null 2>&1 || { echo >&2 "Go is required but not installed. Aborting."; exit 1; }
 command -v node >/dev/null 2>&1 || { echo >&2 "Node.js is required but not installed. Aborting."; exit 1; }
 command -v wails >/dev/null 2>&1 || { echo >&2 "Wails is required but not installed. Aborting."; exit 1; }
-command -v nfpm >/dev/null 2>&1 || { echo >&2 "nfpm is required but not installed. Aborting."; exit 1; }
 command -v python3 >/dev/null 2>&1 || { echo >&2 "python3 is required but not installed. Aborting."; exit 1; }
+
+# OS Detection
+OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+# Platform-specific checks
+if [ "$OS_NAME" == "linux" ]; then
+    command -v nfpm >/dev/null 2>&1 || { echo >&2 "nfpm is required for Linux builds but not installed. Aborting."; exit 1; }
+fi
 
 # Read Version
 VERSION=$(python3 -c "import json; print(json.load(open('version.json'))['code'])")
