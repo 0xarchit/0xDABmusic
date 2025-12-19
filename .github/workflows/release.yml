@@ -27,8 +27,17 @@ jobs:
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev build-essential pkg-config libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev
+          sudo apt-get install -y libgtk-3-dev build-essential pkg-config mingw-w64 binutils-mingw-w64 icoutils imagemagick
+          # Ubuntu 24.04 (noble) uses libwebkit2gtk-4.1-dev; fallback to 4.0 for older distros
+          sudo apt-get install -y libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev
+          # Optional but recommended for some webview builds
           sudo apt-get install -y libsoup-3.0-dev || true
+          # Provide a pkg-config alias so libraries expecting webkit2gtk-4.0 will work on 24.04
+          if [ -f /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc ] && [ ! -f /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc ]; then
+            sudo ln -s /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
+          fi
+          # Verify pkg-config can resolve at least one WebKitGTK version
+          pkg-config --exists webkit2gtk-4.0 || pkg-config --exists webkit2gtk-4.1
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
       - name: Install nfpm

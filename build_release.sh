@@ -105,10 +105,9 @@ build_macos() {
     cd frontend && npm install && cd ..
     wails build -platform darwin/universal -clean -ldflags "-s -w"
     if [ -d "build/bin/0xDABmusic.app" ]; then
-        cd build/bin
-        zip -r "0xDABmusic_${VERSION}_macos_universal.zip" "0xDABmusic.app"
-        mv "0xDABmusic_${VERSION}_macos_universal.zip" ../artifacts/
-        cd ../..
+        echo "Packaging macOS Universal .dmg..."
+        hdiutil create -volname "0xDABmusic" -srcfolder "build/bin/0xDABmusic.app" -ov -format UDZO "build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg"
+        echo "macOS DMG created: build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg"
     else
         echo "macOS build failed"; exit 1
     fi

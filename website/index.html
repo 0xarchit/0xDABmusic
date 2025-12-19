@@ -495,7 +495,7 @@
               <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" />
               <path d="M12 17v-5m0-4h.01" />
             </svg>
-            macOS (Universal)
+            macOS (Universal) (.dmg)
           </a>
         </div>
       </div>
@@ -641,7 +641,7 @@
           const winAsset = relData.assets.find(a => a.name.toLowerCase().endsWith('.exe'));
           const debAsset = relData.assets.find(a => a.name.toLowerCase().endsWith('.deb'));
           const archAsset = relData.assets.find(a => a.name.toLowerCase().includes('arch') || a.name.toLowerCase().endsWith('.pkg.tar.zst'));
-          const macAsset = relData.assets.find(a => a.name.toLowerCase().includes('macos') && a.name.toLowerCase().endsWith('.zip'));
+          const macAsset = relData.assets.find(a => a.name.toLowerCase().includes('macos') && a.name.toLowerCase().endsWith('.dmg'));
 
           if (winAsset) winLink.href = winAsset.browser_download_url;
           if (debAsset) debLink.href = debAsset.browser_download_url;
