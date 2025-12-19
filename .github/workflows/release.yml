@@ -9,115 +9,119 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  build-linux:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.25.5"
           check-latest: true
-          cache: false
-          cache-dependency-path: go.sum
           go-version-file: go.mod
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev build-essential pkg-config mingw-w64 binutils-mingw-w64 icoutils imagemagick
-          # Ubuntu 24.04 (noble) uses libwebkit2gtk-4.1-dev; fallback to 4.0 for older distros
-          sudo apt-get install -y libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev
-          # Optional but recommended for some webview builds
+          sudo apt-get install -y libgtk-3-dev build-essential pkg-config libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev
           sudo apt-get install -y libsoup-3.0-dev || true
-          # Provide a pkg-config alias so libraries expecting webkit2gtk-4.0 will work on 24.04
-          if [ -f /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc ] && [ ! -f /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc ]; then
-            sudo ln -s /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
-          fi
-          # Verify pkg-config can resolve at least one WebKitGTK version
-          pkg-config --exists webkit2gtk-4.0 || pkg-config --exists webkit2gtk-4.1
-
-      - name: Ensure Windows ICO icon exists
-        run: |
-          if [ -f assets/appicon.png ] && [ ! -f assets/appicon.ico ]; then
-            if command -v icotool >/dev/null 2>&1; then
-              icotool -c -o assets/appicon.ico assets/appicon.png || true
-            elif command -v convert >/dev/null 2>&1; then
-              convert assets/appicon.png -define icon:auto-resize=256,128,64,48,32,16 assets/appicon.ico || true
-            else
-              echo "No ICO generator (icotool/convert) available; proceeding without creating assets/appicon.ico" >&2
-            fi
-          fi
-          if command -v x86_64-w64-mingw32-windres >/dev/null 2>&1; then
-            x86_64-w64-mingw32-windres --version
-          else
-            echo "windres not found (binutils-mingw-w64). Icon embedding may fail." >&2
-          fi
-
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-      - name: Install go-winres (Windows icon fallback)
-        run: go install github.com/tc-hib/go-winres@latest
-
-      - name: Install rsrc (preferred icon resource tool)
-        run: go install github.com/akavel/rsrc@latest
-
       - name: Install nfpm
         run: |
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
           sudo apt-get update
           sudo apt-get install -y nfpm
-
       - name: Build and Package
         run: |
           chmod +x build_release.sh
-          ./build_release.sh
-
-      - name: Windows icon sanity check
-        if: startsWith(github.ref, 'refs/tags/') || always()
-        run: |
-          echo "Artifacts:"
-          ls -la build/artifacts || true
-          for f in build/artifacts/*_win.exe; do
-            if [ -f "$f" ]; then
-              echo "---- $f ----"
-              if command -v wrestool >/dev/null 2>&1; then
-                wrestool -l "$f" || true
-                if ! wrestool -l "$f" | grep -q "type=14 --name=1"; then
-                  echo "Warning: group_icon resource name is not 1. Explorer may show a different/default icon." >&2
-                fi
-              elif command -v icotool >/dev/null 2>&1; then
-                icotool -l "$f" 2>/dev/null || true
-                if ! icotool -l "$f" 2>/dev/null | grep -q "group"; then
-                  echo "Warning: could not verify group_icon via icotool; ensure EXE contains proper group icons." >&2
-                fi
-              else
-                echo "No icon inspection tools available."
-              fi
-            fi
-          done
-
-      - name: Create Release
+          ./build_release.sh linux
+      - name: Upload to Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            build/artifacts/*
-          draft: false
-          prerelease: false
-          fail_on_unmatched_files: false
+          files: build/artifacts/*
           token: ${{ secrets.GIT_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
 
+  build-windows:
+    needs: build-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.5"
+          go-version-file: go.mod
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Windows Cross-Compile Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64 icoutils imagemagick
+          go install github.com/akavel/rsrc@latest
+          go install github.com/tc-hib/go-winres@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Build and Package
+        run: |
+          chmod +x build_release.sh
+          ./build_release.sh windows
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: build/artifacts/*
+          token: ${{ secrets.GIT_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+
+  build-macos:
+    needs: build-windows
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.5"
+          go-version-file: go.mod
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Build and Package
+        run: |
+          chmod +x build_release.sh
+          ./build_release.sh
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: build/artifacts/*
+          token: ${{ secrets.GIT_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+
+  deploy-pages:
+    needs: build-macos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:

@@ -3,4 +3,3 @@ node_modules
 frontend/dist
 .cache
 build/bin
-build/darwin
