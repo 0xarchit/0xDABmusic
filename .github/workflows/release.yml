@@ -60,7 +60,7 @@ jobs:
 
   build-windows:
     needs: build-linux
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,19 +73,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Install Windows Cross-Compile Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mingw-w64 icoutils imagemagick
-          go install github.com/akavel/rsrc@latest
-          go install github.com/tc-hib/go-winres@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
       - name: Build and Package
+        shell: bash
         run: |
-          chmod +x build_release.sh
-          ./build_release.sh windows
+          VERSION=$(python3 -c "import json; print(json.load(open('version.json'))['code'])")
+          wails build -platform windows/amd64 -clean -ldflags "-s -w"
+          mkdir -p build/artifacts
+          if [ -f "build/bin/0xDABmusic.exe" ]; then
+            mv "build/bin/0xDABmusic.exe" "build/artifacts/0xDABmusic_${VERSION}_windows_amd64.exe"
+          fi
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
