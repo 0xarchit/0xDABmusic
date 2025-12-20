@@ -57,14 +57,30 @@ build_macos() {
     echo -e "\nBuilding macOS Universal App..."
     cd frontend && npm install && cd ..
     wails build -platform darwin/universal -clean -ldflags "-s -w"
-    if [ -d "build/bin/0xDABmusic.app" ]; then
-        echo "Packaging macOS Universal .dmg..."
-        hdiutil create -volname "0xDABmusic" -srcfolder "build/bin/0xDABmusic.app" -ov -format UDZO "build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg"
-        echo "macOS DMG created: build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg"
+    APP="build/bin/0xDABmusic.app"
+    if [ -d "$APP" ]; then
+        echo "Fixing permissions (ALL binaries)..."
+        find "$APP/Contents/MacOS" -type f -exec chmod +x {} \;
+        echo "Removing quarantine attributes..."
+        xattr -rc "$APP"
+        echo "Ad-hoc signing entire app bundle..."
+        codesign --force --deep --sign - "$APP"
+        echo "Verifying signature..."
+        codesign --verify --deep --strict "$APP" || exit 1
+        echo "Packaging macOS Universal DMG..."
+        mkdir -p build/artifacts
+        hdiutil create \
+          -volname "0xDABmusic" \
+          -srcfolder "$APP" \
+          -ov -format UDZO \
+          "build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg"
+        echo "macOS DMG created successfully"
     else
-        echo "macOS build failed"; exit 1
+        echo "macOS build failed"
+        exit 1
     fi
 }
+
 
 # Build Execution Logic
 if [ "$OS_NAME" == "linux" ]; then
