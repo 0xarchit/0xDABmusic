@@ -17,7 +17,6 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25.5"
           check-latest: true
           go-version-file: go.mod
       - name: Setup Node.js
@@ -73,7 +72,6 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25.5"
           go-version-file: go.mod
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -82,7 +80,9 @@ jobs:
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
       - name: Install NSIS
-        run: choco install nsis
+        run: |
+          choco install nsis
+          echo "C:\Program Files (x86)\NSIS" >> $env:GITHUB_PATH
       - name: Build and Package
         shell: bash
         run: |
@@ -144,7 +144,6 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25.5"
           go-version-file: go.mod
       - name: Setup Node.js
         uses: actions/setup-node@v4
