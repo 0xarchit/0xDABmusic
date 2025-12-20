@@ -36,6 +36,7 @@ import {
 import { toast } from "sonner";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { InlineLoader } from "@/components/Loader";
+import { useProcessStore } from "@/lib/process-store";
 
 export function ConvertPage({
   onTransferComplete,
@@ -65,6 +66,7 @@ export function ConvertPage({
   const [lastTransferStats, setLastTransferStats] = useState<any>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const { addProcess, removeProcess } = useProcessStore();
 
   useEffect(() => {
     localStorage.setItem("convert_url", url);
@@ -123,7 +125,8 @@ export function ConvertPage({
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    setLogs((prev) => [...prev, `Starting fetch for: ${url}`]);
+    const processId = `fetch-${Date.now()}`;
+    addProcess(processId, "Fetching Playlist/Link");
 
     try {
       if (window.go?.main?.App?.GetSpotifyPlaylist) {
@@ -156,6 +159,7 @@ export function ConvertPage({
       if (!controller.signal.aborted) {
         setLoading(false);
       }
+      removeProcess(processId);
     }
   };
 
@@ -168,6 +172,9 @@ export function ConvertPage({
     let matchedCount = 0;
     let addedCount = 0;
     let failedCount = 0;
+
+    const processId = `convert-${Date.now()}`;
+    addProcess(processId, `Converting "${playlistName || "Playlist"}"`);
 
     try {
       if (window.go?.main?.App?.CreateDABLibrary) {
@@ -212,6 +219,7 @@ export function ConvertPage({
       toast.error("Failed to create library: " + e);
     } finally {
       setCreating(false);
+      removeProcess(processId);
     }
   };
 

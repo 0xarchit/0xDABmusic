@@ -48,6 +48,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, getProxiedImageURL } from "@/lib/utils";
 import { InlineLoader } from "@/components/Loader";
+import { useProcessStore } from "@/lib/process-store";
 
 interface LibraryPageProps {
   navigateTo?: (page: string, params: Record<string, string>) => void;
@@ -67,6 +68,7 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
     toggleFavorite: storeFavorite,
     isFavorite,
   } = useFavoriteStore();
+  const { addProcess, removeProcess } = useProcessStore();
 
   const [isAddToLibraryOpen, setIsAddToLibraryOpen] = useState(false);
   const [trackToAdd, setTrackToAdd] = useState<any | null>(null);
@@ -81,6 +83,8 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
   const handleSearch = async () => {
     if (!searchQuery) return;
     setIsSearching(true);
+    const processId = `search-${Date.now()}`;
+    addProcess(processId, `Searching "${searchQuery}"`);
     try {
       const results = await window.go.main.App.SearchDAB(searchQuery);
       setSearchResults(results || []);
@@ -88,6 +92,7 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
       toast.error("Search failed");
     } finally {
       setIsSearching(false);
+      removeProcess(processId);
     }
   };
 
@@ -101,7 +106,9 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
   };
 
   const refreshAll = async () => {
+    const processId = `refresh-${Date.now()}`;
     if (selectedLibrary) {
+      addProcess(processId, `Refreshing "${selectedLibrary.name}"`);
       try {
         const details = await window.go.main.App.GetLibraryDetails(
           selectedLibrary.id
@@ -111,8 +118,11 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
         toast.success("Library refreshed");
       } catch (error) {
         toast.error("Failed to refresh library");
+      } finally {
+        removeProcess(processId);
       }
     } else {
+      addProcess(processId, "Refreshing Libraries");
       try {
         await fetchFavorites();
         if (window.go?.main?.App?.RefreshLibraries) {
@@ -124,6 +134,8 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
         toast.success("Refreshed");
       } catch (error) {
         toast.error("Failed to refresh");
+      } finally {
+        removeProcess(processId);
       }
     }
   };
@@ -327,12 +339,16 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
   };
 
   const openLibrary = async (lib: any) => {
+    const processId = `open-lib-${lib.id}`;
+    addProcess(processId, `Opening "${lib.name}"`);
     try {
       const details = await window.go.main.App.GetLibraryDetails(lib.id);
       setSelectedLibrary(details);
       setLibraryTracks(details.tracks || []);
     } catch (error) {
       toast.error("Failed to load library details");
+    } finally {
+      removeProcess(processId);
     }
   };
 

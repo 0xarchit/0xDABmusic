@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InlineLoader } from "@/components/Loader";
 import { getProxiedImageURL } from "@/lib/utils";
+import { useProcessStore } from "@/lib/process-store";
 
 interface AlbumPageProps {
   albumId: string;
@@ -18,6 +19,7 @@ export function AlbumPage({ albumId, onBack }: AlbumPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { play, setQueue } = usePlayerStore();
   const { toggleFavorite: storeFavorite, favorites } = useFavoriteStore();
+  const { addProcess, removeProcess } = useProcessStore();
 
   useEffect(() => {
     if (albumId) {
@@ -28,6 +30,8 @@ export function AlbumPage({ albumId, onBack }: AlbumPageProps) {
   const fetchAlbum = async () => {
     if (!albumId) return;
     setIsLoading(true);
+    const processId = `album-${albumId}`;
+    addProcess(processId, "Loading Album Details");
     try {
       const result = await window.go.main.App.GetAlbumByID(albumId);
       setAlbum(result.album);
@@ -35,6 +39,7 @@ export function AlbumPage({ albumId, onBack }: AlbumPageProps) {
       toast.error("Failed to load album");
     } finally {
       setIsLoading(false);
+      removeProcess(processId);
     }
   };
 

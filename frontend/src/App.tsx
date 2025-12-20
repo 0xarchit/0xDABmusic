@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import { FullPageLoader } from "@/components/Loader";
+import { ProcessingStatus } from "@/components/ProcessingStatus";
 import { useQueueStore } from "@/lib/queue-store";
 import {
   Dialog,
@@ -369,6 +370,7 @@ function App() {
       </Dialog>
 
       <Toaster />
+      <ProcessingStatus />
     </div>
   );
 }

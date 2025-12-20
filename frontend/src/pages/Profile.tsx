@@ -17,17 +17,27 @@ import {
 } from "lucide-react";
 import { getProxiedImageURL } from "@/lib/utils";
 import { usePlayerStore } from "@/lib/player-store";
+import { useProcessStore } from "@/lib/process-store";
 
 export function ProfilePage() {
   const { user, isLoading, fetchUser } = useUserStore();
   const { favorites } = useFavoriteStore();
   const { tracks: recentlyPlayed, clearHistory } = useRecentlyPlayedStore();
   const { play } = usePlayerStore();
+  const { addProcess, removeProcess } = useProcessStore();
   const [libraries, setLibraries] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchUser();
-    fetchLibraries();
+    const loadProfileData = async () => {
+      const processId = "profile-load";
+      addProcess(processId, "Loading Profile");
+      try {
+        await Promise.all([fetchUser(), fetchLibraries()]);
+      } finally {
+        removeProcess(processId);
+      }
+    };
+    loadProfileData();
   }, []);
 
   const fetchLibraries = async () => {
