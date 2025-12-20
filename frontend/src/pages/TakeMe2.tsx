@@ -14,12 +14,17 @@ import {
   Trash2,
   Database,
   Key,
+  RefreshCw,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 
 export function TakeMe2Page() {
   const [cacheSize, setCacheSize] = useState("Calculating...");
+  const [version, setVersion] = useState("Loading...");
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
 
   const fetchCacheSize = async () => {
     if (window.go?.main?.App?.GetTotalCacheSize) {
@@ -34,7 +39,44 @@ export function TakeMe2Page() {
 
   useEffect(() => {
     fetchCacheSize();
+    fetchVersion();
   }, []);
+
+  const fetchVersion = async () => {
+    if (window.go?.main?.App?.GetAppVersion) {
+      try {
+        const v = await window.go.main.App.GetAppVersion();
+        setVersion(v);
+      } catch (e) {
+        setVersion("Unknown");
+      }
+    }
+  };
+
+  const checkForUpdates = async () => {
+    if (version === "Loading..." || version === "Unknown") return;
+    
+    setCheckingUpdate(true);
+    try {
+      const response = await fetch(
+        "https://api.github.com/repos/0xarchit/0xDABmusic/releases/latest"
+      );
+      const data = await response.json();
+      const latest = data.tag_name.replace(/^v/, "");
+      
+      if (latest !== version) {
+        setUpdateAvailable(true);
+        toast.success(`Update available: v${latest}`);
+      } else {
+        setUpdateAvailable(false);
+        toast.info("You are up to date!");
+      }
+    } catch (e) {
+      toast.error("Failed to check for updates");
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
 
   const openLink = (url: string) => {
     if (window.go?.main?.App?.OpenBrowser) {
@@ -125,6 +167,38 @@ export function TakeMe2Page() {
                   Star
                 </Button>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+              <div className="flex flex-col">
+                <span className="font-medium">Current Version</span>
+                <span className="text-sm text-muted-foreground">
+                  v{version}
+                </span>
+              </div>
+              <Button
+                variant={updateAvailable ? "default" : "outline"}
+                size="sm"
+                onClick={() =>
+                  updateAvailable
+                    ? openLink("https://github.com/0xarchit/0xDABmusic/releases")
+                    : checkForUpdates()
+                }
+                disabled={checkingUpdate}
+              >
+                {checkingUpdate ? (
+                  <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                ) : updateAvailable ? (
+                  <Download className="mr-2 h-3 w-3" />
+                ) : (
+                  <RefreshCw className="mr-2 h-3 w-3" />
+                )}
+                {checkingUpdate
+                  ? "Checking..."
+                  : updateAvailable
+                  ? "Update Now"
+                  : "Check Updates"}
+              </Button>
             </div>
           </CardContent>
         </Card>
