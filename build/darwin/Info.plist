@@ -18,9 +18,13 @@
         <key>CFBundleIconFile</key>
         <string>iconfile</string>
         <key>LSMinimumSystemVersion</key>
-        <string>10.13.0</string>
+        <string>11.0</string>
         <key>NSHighResolutionCapable</key>
-        <string>true</string>
+        <true/>
+        <key>LSApplicationCategoryType</key>
+        <string>public.app-category.music</string>
+        <key>LSUIElement</key>
+        <false/>
         <key>NSHumanReadableCopyright</key>
         <string>{{.Info.Copyright}}</string>
         {{if .Info.FileAssociations}}

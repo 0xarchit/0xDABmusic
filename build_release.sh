@@ -61,6 +61,8 @@ build_macos() {
     if [ -d "$APP" ]; then
         echo "Fixing permissions (ALL binaries)..."
         find "$APP/Contents/MacOS" -type f -exec chmod +x {} \;
+        echo "Removing local dev artifacts..."
+        find "$APP" -name "Info.dev.plist" -delete
         echo "Removing quarantine attributes..."
         xattr -rc "$APP"
         echo "Ad-hoc signing entire app bundle..."
