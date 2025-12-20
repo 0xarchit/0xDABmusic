@@ -87,6 +87,12 @@ func (s *CacheService) DeleteCachedAPI(key string) {
 	delete(s.apiCache, key)
 }
 
+func (s *CacheService) ClearAPICache() {
+	s.apiMu.Lock()
+	defer s.apiMu.Unlock()
+	s.apiCache = make(map[string]apiCacheEntry)
+}
+
 func (s *CacheService) GetStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")

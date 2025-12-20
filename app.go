@@ -246,6 +246,7 @@ func (a *App) Logout() {
 	a.config.DABAuthToken = ""
 	a.config.DABEmail = ""
 	a.config.DABPassword = ""
+	a.cacheService.ClearAPICache()
 	services.SaveConfig(a.config)
 }
 

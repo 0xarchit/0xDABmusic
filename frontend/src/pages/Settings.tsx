@@ -117,6 +117,7 @@ export function SettingsPage() {
   const handleLogout = async () => {
     if (window.go?.main?.App?.Logout) {
       await window.go.main.App.Logout();
+      localStorage.clear();
       window.location.reload();
     }
   };
