@@ -57,6 +57,12 @@ jobs:
           token: ${{ secrets.GIT_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+      
+      - name: Upload Artifacts for Scanning
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: build/artifacts/*
 
   build-windows:
     needs: build-linux
@@ -75,23 +81,59 @@ jobs:
           node-version: "22"
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Install NSIS
+        run: choco install nsis
       - name: Build and Package
         shell: bash
         run: |
           VERSION=$(python3 -c "import json; print(json.load(open('version.json'))['code'])")
+          
+          # Build Binary
           wails build -platform windows/amd64 -clean -ldflags "-s -w"
+          
+          # Prepare Directories
           mkdir -p build/artifacts
-          if [ -f "build/bin/0xDABmusic.exe" ]; then
-            mv "build/bin/0xDABmusic.exe" "build/artifacts/0xDABmusic_${VERSION}_windows_amd64.exe"
+          
+          # Check Binary
+          if [ ! -f "build/bin/0xDABmusic.exe" ]; then
+             echo "Windows build failed!"
+             exit 1
           fi
+
+          # Create Installer via NSIS
+          # makensis is available on windows-latest runner
+          makensis -DVERSION="$VERSION" build/windows/installer.nsi
+          
+          # Zip the Installer (Setup) and the standalone Exe
+          cd build/artifacts
+          
+          # Zip Installer if it exists
+          if [ -f "0xDABmusic_Setup_${VERSION}.exe" ]; then
+            7z a -tzip "0xDABmusic_Setup_${VERSION}.zip" "0xDABmusic_Setup_${VERSION}.exe"
+            rm "0xDABmusic_Setup_${VERSION}.exe" # Remove original to verify only zip is uploaded
+          fi
+          
+          # Also package standalone exe just in case people want it
+          cp ../bin/0xDABmusic.exe "0xDABmusic_Portable_${VERSION}.exe"
+          7z a -tzip "0xDABmusic_Portable_${VERSION}.zip" "0xDABmusic_Portable_${VERSION}.exe"
+          rm "0xDABmusic_Portable_${VERSION}.exe"
+          
+          cd ../..
+
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: build/artifacts/*
+          files: build/artifacts/*.zip
           token: ${{ secrets.GIT_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+    
+      - name: Upload Artifacts for Scanning
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: build/artifacts/*.zip
 
   build-macos:
     needs: build-windows
@@ -123,8 +165,89 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
 
+      - name: Upload Artifacts for Scanning
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: build/artifacts/*
+
+  scan-and-update-release:
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Scan with VirusTotal and Update Release
+        env:
+          VT_API_KEY: ${{ secrets.VT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          echo "Starting VirusTotal Scan..."
+          # Function to scan file
+          scan_file() {
+            local filepath="$1"
+            local filename=$(basename "$filepath")
+            echo "Scanning $filename..."
+            
+            # Upload file to VirusTotal
+            resp=$(curl --request POST \
+              --url "https://www.virustotal.com/api/v3/files" \
+              --header "x-apikey: $VT_API_KEY" \
+              --form "file=@$filepath")
+            
+            # Extract Analysis ID
+            id=$(echo "$resp" | jq -r '.data.id')
+            
+            if [ "$id" == "null" ] || [ -z "$id" ]; then
+              echo "Failed to upload $filename to VirusTotal."
+              echo "Response: $resp"
+              return 1
+            fi
+            
+            # Check for existing sha256 to avoid waiting for re-analysis if already known? 
+            # VT API v3 /files upload returns analysis id directly.
+            
+            # Construct Link (using the SHA256 of the file for the direct report link usually, or analysis link)
+            # Actually, standard VT link is /gui/file/<sha256>/detection
+            sha256=$(sha256sum "$filepath" | awk '{print $1}')
+            link="https://www.virustotal.com/gui/file/$sha256/detection"
+            
+            echo "- 🛡️ **$filename**: [VirusTotal Scan Result]($link)" >> scan_results.md
+          }
+
+          touch scan_results.md
+          echo "### 🛡️ VirusTotal Scan Results" >> scan_results.md
+          echo "" >> scan_results.md
+          
+          # Scan all zip files
+          find artifacts -name "*.zip" | while read -r file; do
+             scan_file "$file"
+          done
+
+          echo "" >> scan_results.md
+          echo "ℹ️ _Note: VirusTotal results may take a few moments to populate if this is the first time the file has been seen._" >> scan_results.md
+          
+          # Prepare Release Body Update
+          # We want to prepend generic info and append scan results
+          
+          echo "Updating Release Description..."
+          
+          CURRENT_BODY=$(gh release view "$TAG_NAME" --json body -q .body)
+          
+          # Add "Setup is Preferred" note if not present
+          NOTE="### 📀 Installation Recommended\n\n> **Windows Users**: Please use the **Setup** file for the best experience (Desktop shortcuts, Uninstaller, etc).\n\n"
+          
+          NEW_BODY="$NOTE$CURRENT_BODY\n\n$(cat scan_results.md)"
+          
+          gh release edit "$TAG_NAME" --notes "$NEW_BODY"
+          
   deploy-pages:
-    needs: build-macos
+    needs: scan-and-update-release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

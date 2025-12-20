@@ -48,10 +48,16 @@ build_linux() {
     if [ ! -f build/bin/0xDABmusic ]; then echo "Linux build failed"; exit 1; fi
     nfpm pkg --packager deb --target build/bin/
     nfpm pkg --packager archlinux --target build/bin/
-    cp -f build/bin/*.deb build/artifacts/ 2>/dev/null || true
-    cp -f build/bin/*.pkg.tar.zst build/artifacts/ 2>/dev/null || true
-    cp -f build/bin/0xDABmusic build/artifacts/0xDABmusic_${VERSION}_linux_amd64 2>/dev/null || true
+
+    # Zip Artifacts
+    echo "Zipping Linux Artifacts..."
+    cd build/bin
+    zip -r "../artifacts/0xDABmusic_${VERSION}_linux_amd64.zip" "0xDABmusic"
+    zip -r "../artifacts/0xDABmusic_${VERSION}_linux_deb.zip" *.deb
+    zip -r "../artifacts/0xDABmusic_${VERSION}_linux_arch.zip" *.pkg.tar.zst
+    cd ../..
 }
+
 
 build_macos() {
     echo -e "\nBuilding macOS Universal App..."
@@ -71,11 +77,19 @@ build_macos() {
         codesign --verify --deep --strict "$APP" || exit 1
         echo "Packaging macOS Universal DMG..."
         mkdir -p build/artifacts
+        DMG_NAME="0xDABmusic_${VERSION}_macos_universal.dmg"
         hdiutil create \
           -volname "0xDABmusic" \
           -srcfolder "$APP" \
           -ov -format UDZO \
-          "build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg"
+          "build/artifacts/$DMG_NAME"
+        
+        echo "Zipping macOS DMG..."
+        cd build/artifacts
+        zip -r "${DMG_NAME}.zip" "$DMG_NAME"
+        rm "$DMG_NAME" # Remove original DMG to keep only Zip
+        cd ../..
+        
         echo "macOS DMG created successfully"
     else
         echo "macOS build failed"
