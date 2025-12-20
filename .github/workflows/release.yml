@@ -135,43 +135,10 @@ jobs:
           name: windows-artifacts
           path: build/artifacts/*.zip
 
-  build-macos:
-    needs: build-windows
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-      - name: Build and Package
-        run: |
-          chmod +x build_release.sh
-          ./build_release.sh
-      - name: Upload to Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: build/artifacts/*
-          token: ${{ secrets.GIT_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
 
-      - name: Upload Artifacts for Scanning
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-artifacts
-          path: build/artifacts/*
 
   scan-and-update-release:
-    needs: [build-linux, build-windows, build-macos]
+    needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

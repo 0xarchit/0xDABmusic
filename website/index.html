@@ -485,14 +485,7 @@
             </svg>
             Arch
           </a>
-          <a href="#" class="dropdown-item" id="macLink">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2v20"></path>
-              <path d="M2 12c10 0 10 0 20 0"></path>
-              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"></path>
-            </svg>
-            macOS
-          </a>
+
         </div>
       </div>
 
@@ -646,14 +639,12 @@
         const links = {
           win: assets.find(a => a.name.endsWith('.exe')),
           deb: assets.find(a => a.name.endsWith('.deb')),
-          arch: assets.find(a => a.name.includes('arch') || a.name.endsWith('.zst')),
-          mac: assets.find(a => a.name.includes('macos') && a.name.endsWith('.dmg'))
+          arch: assets.find(a => a.name.includes('arch') || a.name.endsWith('.zst'))
         };
 
         if (links.win) document.getElementById('winLink').href = links.win.browser_download_url;
         if (links.deb) document.getElementById('debLink').href = links.deb.browser_download_url;
         if (links.arch) document.getElementById('archLink').href = links.arch.browser_download_url;
-        if (links.mac) document.getElementById('macLink').href = links.mac.browser_download_url;
       } catch (e) { console.error('Release fetch failed'); }
     });
   </script>

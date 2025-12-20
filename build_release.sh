@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build Script for 0xDABmusic (Linux + macOS)
+# Build Script for 0xDABmusic
 
 # Exit on error
 set -e
@@ -59,50 +59,9 @@ build_linux() {
 }
 
 
-build_macos() {
-    echo -e "\nBuilding macOS Universal App..."
-    cd frontend && npm install && cd ..
-    wails build -platform darwin/universal -clean -ldflags "-s -w"
-    APP="build/bin/0xDABmusic.app"
-    if [ -d "$APP" ]; then
-        echo "Fixing permissions (ALL binaries)..."
-        find "$APP/Contents/MacOS" -type f -exec chmod +x {} \;
-        echo "Removing local dev artifacts..."
-        find "$APP" -name "Info.dev.plist" -delete
-        echo "Removing quarantine attributes..."
-        xattr -rc "$APP"
-        echo "Ad-hoc signing entire app bundle..."
-        codesign --force --deep --sign - "$APP"
-        echo "Verifying signature..."
-        codesign --verify --deep --strict "$APP" || exit 1
-        echo "Packaging macOS Universal DMG..."
-        mkdir -p build/artifacts
-        DMG_NAME="0xDABmusic_${VERSION}_macos_universal.dmg"
-        hdiutil create \
-          -volname "0xDABmusic" \
-          -srcfolder "$APP" \
-          -ov -format UDZO \
-          "build/artifacts/$DMG_NAME"
-        
-        echo "Zipping macOS DMG..."
-        cd build/artifacts
-        zip -r "${DMG_NAME}.zip" "$DMG_NAME"
-        rm "$DMG_NAME" # Remove original DMG to keep only Zip
-        cd ../..
-        
-        echo "macOS DMG created successfully"
-    else
-        echo "macOS build failed"
-        exit 1
-    fi
-}
-
-
 # Build Execution Logic
 if [ "$OS_NAME" == "linux" ]; then
     build_linux
-elif [ "$OS_NAME" == "darwin" ]; then
-    build_macos
 fi
 
 echo -e "\nBuild Complete!"
