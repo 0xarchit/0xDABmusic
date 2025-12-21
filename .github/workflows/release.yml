@@ -203,7 +203,7 @@ jobs:
           echo "Creating DMG Installer..."
           create-dmg \
             --volname "0xDABmusic Installer" \
-            --volicon "build/bin/0xDABmusic.app/Contents/Resources/icon.icns" \
+            --volicon "build/bin/0xDABmusic.app/Contents/Resources/iconfile.icns" \
             --window-pos 200 120 \
             --window-size 800 400 \
             --icon-size 100 \
