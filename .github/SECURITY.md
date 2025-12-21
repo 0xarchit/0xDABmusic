@@ -6,7 +6,7 @@ We actively provide security updates for the following versions of **0xDABmusic*
 
 | Version | Supported          |
 | ------- | ------------------ |
-| v3.0.x  | :white_check_mark: |
+| v3.x.x  | :white_check_mark: |
 | < v3.0  | :x:                |
 
 ## Reporting a Vulnerability

@@ -44,12 +44,18 @@
 Choose the version that fits your workflow.
 
 ### Windows
-| Version | Description | Recommended For |
-| :--- | :--- | :--- |
-| **Setup (Exe)** | Full installer with desktop shortcuts and uninstaller. | **Most Users** |
-| **Portable (Zip)** | Standalone executable. No installation required. | USB Drives / Testing |
+Download the **Windows Bundle (Zip)**. It contains:
+- **Setup (.exe)**: Full installer (Recommended).
+- **Portable (.exe)**: Standalone executable.
 
-> **Note for Windows Users:** If Microsoft Defender or SmartScreen warns you, click "More Info" -> "Run Anyway". This is common for open-source apps without expensive signing certificates.
+> **Note:** If Microsoft Defender warns you, strict "More Info" -> "Run Anyway".
+
+### macOS
+Download the **macOS Bundle (Zip)**. It contains:
+- **Installer (.dmg)**: Drag and drop to Applications.
+- **Portable (.app)**: Run directly.
+
+> **Note:** Since we don't have an Apple Developer ID yet, you may need to **Right Click > Open** the app for the first time if you see "App is damaged" or "Unidentified Developer".
 
 ### Linux
 We support major distributions natively (Now Only Linux and Windows Supported).

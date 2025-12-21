@@ -46,8 +46,34 @@ jobs:
           sudo apt-get install -y nfpm
       - name: Build and Package
         run: |
-          chmod +x build_release.sh
-          ./build_release.sh linux
+          # 1. Extract Version
+          VERSION=$(python3 -c "import json; print(json.load(open('version.json'))['code'])")
+          echo "Detected Version: $VERSION"
+          export VERSION
+
+          # 2. Update wails.json version
+          python3 -c "import json; data=json.load(open('wails.json')); data['info']['productVersion']='$VERSION'; json.dump(data, open('wails.json', 'w'), indent=2)"
+
+          # 3. Environment Setup
+          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+          mkdir -p build/artifacts
+
+          # 4. Build
+          cd frontend && npm install && cd ..
+          wails build -platform linux/amd64 -clean -ldflags "-s -w"
+          
+          if [ ! -f build/bin/0xDABmusic ]; then echo "Linux build failed"; exit 1; fi
+
+          # 5. Package (NFPM)
+          nfpm pkg --packager deb --target build/bin/
+          nfpm pkg --packager archlinux --target build/bin/
+
+          # 6. Zip Artifacts
+          cd build/bin
+          zip -r "../artifacts/0xDABmusic_${VERSION}_linux_amd64.zip" "0xDABmusic"
+          zip -r "../artifacts/0xDABmusic_${VERSION}_linux_deb.zip" *.deb
+          zip -r "../artifacts/0xDABmusic_${VERSION}_linux_arch.zip" *.pkg.tar.zst
+          cd ../..
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -101,22 +127,19 @@ jobs:
           fi
 
           # Create Installer via NSIS
-          # makensis is available on windows-latest runner
           makensis -DVERSION="$VERSION" build/windows/installer.nsi
           
-          # Zip the Installer (Setup) and the standalone Exe
+          # Bundle artifacts into single zip
           cd build/artifacts
           
-          # Zip Installer if it exists
-          if [ -f "0xDABmusic_Setup_${VERSION}.exe" ]; then
-            7z a -tzip "0xDABmusic_Setup_${VERSION}.zip" "0xDABmusic_Setup_${VERSION}.exe"
-            rm "0xDABmusic_Setup_${VERSION}.exe" # Remove original to verify only zip is uploaded
-          fi
-          
-          # Also package standalone exe just in case people want it
+          # Rename standalone exe
           cp ../bin/0xDABmusic.exe "0xDABmusic_Portable_${VERSION}.exe"
-          7z a -tzip "0xDABmusic_Portable_${VERSION}.zip" "0xDABmusic_Portable_${VERSION}.exe"
-          rm "0xDABmusic_Portable_${VERSION}.exe"
+          
+          # Zip both Setup and Portable into one bundle
+          7z a -tzip "0xDABmusic_${VERSION}_windows_bundle.zip" "0xDABmusic_Setup_${VERSION}.exe" "0xDABmusic_Portable_${VERSION}.exe"
+          
+          # Cleanup raw files so they aren't uploaded
+          rm "0xDABmusic_Setup_${VERSION}.exe" "0xDABmusic_Portable_${VERSION}.exe"
           
           cd ../..
 
@@ -135,10 +158,89 @@ jobs:
           name: windows-artifacts
           path: build/artifacts/*.zip
 
+  build-macos:
+    needs: build-linux
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install macOS Tools
+        run: brew install create-dmg
+
+      - name: Build and Package
+        run: |
+          # 1. Extract Version
+          VERSION=$(python3 -c "import json; print(json.load(open('version.json'))['code'])")
+          echo "Building version: $VERSION"
+          
+          # Update Info.plist with dynamic version
+          plutil -replace CFBundleShortVersionString -string "$VERSION" build/darwin/Info.plist
+          plutil -replace CFBundleVersion -string "$VERSION" build/darwin/Info.plist
+
+          # 2. Build Universal Binary (Intel + Apple Silicon)
+          wails build -platform darwin/universal -clean -ldflags "-s -w"
+
+          # 3. Ad-Hoc Code Signing
+          echo "Applying Ad-Hoc Signature..."
+          codesign --deep --force --verbose --sign "-" "build/bin/0xDABmusic.app"
+
+          # 4. Prepare Artifacts
+          mkdir -p build/artifacts
+          
+          # 5. Create DMG Installer
+          echo "Creating DMG Installer..."
+          create-dmg \
+            --volname "0xDABmusic Installer" \
+            --volicon "build/bin/0xDABmusic.app/Contents/Resources/icon.icns" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "0xDABmusic.app" 200 190 \
+            --hide-extension "0xDABmusic.app" \
+            --app-drop-link 600 185 \
+            "build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg" \
+            "build/bin/0xDABmusic.app"
+
+          # 6. Bundle App and DMG into single Zip
+          cd build/bin
+          cp "../../build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg" .
+          zip -r "../../build/artifacts/0xDABmusic_${VERSION}_macos_bundle.zip" "0xDABmusic.app" "0xDABmusic_${VERSION}_macos_universal.dmg"
+          cd ../..
+          
+          # Cleanup raw dmg so only the bundle is uploaded
+          rm "build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg"
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: build/artifacts/*.zip
+          token: ${{ secrets.GIT_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+
+      - name: Upload Artifacts for Scanning
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: build/artifacts/*.zip
 
   scan-and-update-release:
-    needs: [build-linux, build-windows]
+    needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -208,7 +310,12 @@ jobs:
           
           CURRENT_BODY=$(gh release view "$TAG_NAME" --json body -q .body)
           
-          printf "### 📀 Installation Recommended\n\n> **Windows Users**: Please use the **Setup** file for the best experience (Desktop shortcuts, Uninstaller, etc).\n\n" > new_body.md
+          echo "### 📀 Installation Recommended" > new_body.md
+          echo "" >> new_body.md
+          echo "> **Windows Users**: Please use the **Setup** file for the best experience." >> new_body.md
+          echo "" >> new_body.md
+          echo "> ⚠️ **Linux & macOS**: These builds are currently **UNTESTED**. Please report any issues!" >> new_body.md
+          echo "" >> new_body.md
           
           echo "$CURRENT_BODY" >> new_body.md
           
