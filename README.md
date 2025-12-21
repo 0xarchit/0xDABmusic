@@ -1,223 +1,129 @@
-# 0xDABmusic
+<div align="center">
+  <img src="https://dab.0xarchit.is-a.dev/logo.png" alt="0xDABmusic Logo" width="120" height="120">
+  
+  # 0xDABmusic
+  
+  **Next Gen Music Player for the Audiophile Era**
 
-0xDABmusic is a modern, cross-platform desktop application for music management, streaming, and downloading. It enables users to organize, play, and download music with advanced features like lyrics synchronization, Spotify integration, and robust download management. Built with Go, React (TypeScript), and Wails, it delivers a native experience on Windows and Linux.
+  <!-- Row 1: Status & Identity -->
+  [![License](https://img.shields.io/github/license/0xarchit/0xDABmusic?style=flat-square)](LICENSE)
+  [![Release](https://img.shields.io/github/v/release/0xarchit/0xDABmusic?style=flat-square&color=22d3ee)](https://github.com/0xarchit/0xDABmusic/releases/latest)
+  [![Build Status](https://img.shields.io/github/actions/workflow/status/0xarchit/0xDABmusic/release.yml?style=flat-square&label=Build%20Status)](https://github.com/0xarchit/0xDABmusic/actions/workflows/release.yml)
+  [![Website](https://img.shields.io/website?url=https%3A%2F%2Fdab.0xarchit.is-a.dev&style=flat-square)](https://dab.0xarchit.is-a.dev/)
+  [![Dependencies](https://img.shields.io/badge/dependencies-up--to--date-brightgreen?style=flat-square)](#)
 
-- **Platforms:** Windows, Linux (Debian/Ubuntu, Arch)
-- **Technologies:** Go, React, TypeScript, Wails, TailwindCSS
+  [![Stars](https://img.shields.io/github/stars/0xarchit/0xDABmusic?style=flat-square&color=yellow)](https://github.com/0xarchit/0xDABmusic/stargazers)
+  [![Downloads](https://img.shields.io/github/downloads/0xarchit/0xDABmusic/total?style=flat-square&color=orange)](https://github.com/0xarchit/0xDABmusic/releases)
+  [![Repo Size](https://img.shields.io/github/repo-size/0xarchit/0xDABmusic?style=flat-square&color=blue)](https://github.com/0xarchit/0xDABmusic)
+  [![Issues](https://img.shields.io/github/issues/0xarchit/0xDABmusic?style=flat-square&color=red)](https://github.com/0xarchit/0xDABmusic/issues)
+  [![Last Commit](https://img.shields.io/github/last-commit/0xarchit/0xDABmusic?style=flat-square&color=green)](https://github.com/0xarchit/0xDABmusic/commits/main)
+
+
+  <p align="center">
+    <a href="https://dab.0xarchit.is-a.dev/">🌐 Website</a> •
+    <a href="https://github.com/0xarchit/0xDABmusic/releases">📥 Download</a> •
+    <a href="https://github.com/0xarchit/0xDABmusic/issues">🐛 Report Bug</a>
+  </p>
+</div>
 
 ---
 
-## Installation
+## 🚀 Why 0xDABmusic?
+
+0xDABmusic isn't just another music player. It's a high-performance, native application built with **Go** and **Wails**, designed for those who demand quality and privacy.
+
+- **⚡ Native Performance:** Written in Go, ensuring lightning-fast startup and low resource usage.
+- **🎧 Studio Quality:** Full support for FLAC and high-fidelity artifacts.
+- **🔒 Privacy First:** Your library stays local. No ads, no tracking, no subscription walls.
+- **🛠️ Power Tools:** Built-in lyrics synchronization, Spotify playlist import, and smart conversion.
+
+---
+
+## 📥 Installation
+
+Choose the version that fits your workflow.
 
 ### Windows
-- Download the latest Windows executable from the `build/bin/` directory or the official release page.
-- Double-click to install or run. No additional dependencies required.
-- If prompted by antivirus or Windows Defender, allow the app to run (unsigned by default).
+| Version | Description | Recommended For |
+| :--- | :--- | :--- |
+| **Setup (Exe)** | Full installer with desktop shortcuts and uninstaller. | **Most Users** |
+| **Portable (Zip)** | Standalone executable. No installation required. | USB Drives / Testing |
+
+> **Note for Windows Users:** If Microsoft Defender or SmartScreen warns you, click "More Info" -> "Run Anyway". This is common for open-source apps without expensive signing certificates.
 
 ### Linux
-- **Debian/Ubuntu:**
-  - Install the `.deb` package from `build/bin/`:
-    ```sh
-    sudo dpkg -i 0xDABmusic_<version>_amd64.deb
-    ```
-- **Arch Linux:**
-  - Install the `.pkg.tar.zst` package:
-    ```sh
-    sudo pacman -U 0xDABmusic-<version>-x86_64.pkg.tar.zst
-    ```
-- All required dependencies are bundled. No need for Node.js or Go at runtime.
+We support major distributions natively (Now Only Linux and Windows Supported).
 
-#### Prerequisites (for building from source)
-- Go 1.21+
-- Node.js 22.x (for frontend build)
-- Docker (for Linux packaging)
-- Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
+**Debian / Ubuntu:**
+```bash
+sudo dpkg -i 0xDABmusic_<version>_amd64.deb
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -U 0xDABmusic-<version>-x86_64.pkg.tar.zst
+```
 
 ---
 
-## Getting Started
+## ✨ Features
 
-1. **Launch 0xDABmusic** from your applications menu or by running the executable.
-2. On first launch, log in or register for a DAB account. Guest mode is not supported; authentication is required for full functionality.
-3. Optionally, connect your Spotify account for playlist import and enhanced features. Spotify login is handled securely via OAuth.
-4. Configure your download folder and general settings in the Settings page.
-
----
-
-## Features Overview
-
-### Music Library Management
-- Create, edit, and delete personal music libraries
-- Set libraries as public or private
-- Share public libraries with others (read-only)
-- Library management is accessible from the sidebar under "Library"
-
-### Favorites System
-- Mark any track as a favorite for quick access
-- Favorites are managed in the "Favorites" section
-
-### Search
-- Powerful search for tracks, albums, and artists across your libraries and public content
-- Search bar is always accessible at the top of the main view
-
-### Playback System
-- Integrated audio player with mini and expanded modes
-- Queue management: add, remove, reorder tracks
-- Persistent queue: queue state is saved between sessions
-- Synchronized lyrics display (when available)
-
-### Download Management
-- Download queue with progress tracking
-- Download history with retry and error handling
-- Clear or manage download history from the Downloads page
-
-### Recently Played
-- Tracks your listening history
-- Option to clear/reset history
-- Accessible from the sidebar
-
-### User Profile & Statistics
-- View and edit your profile
-- See listening statistics and activity
-
-### Settings & Customization
-- Configure download paths, concurrency, cache size, and more
-- Access via the sidebar under "Settings"
-
-### Session Management & Security
-- Secure token-based authentication
-- Session restoration on startup
-- Manual logout option in profile menu
+<table>
+  <tr>
+    <td width="50%">
+      <h3>🎵 Library Management</h3>
+      <ul>
+        <li>Organize tracks, artists, and albums</li>
+        <li>Create Public/Private playlists</li>
+        <li>Batch import and export</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h3>🔍 Smart Search</h3>
+      <ul>
+        <li>Global search across library and online</li>
+        <li>Filter by bitrate, format, or duration</li>
+        <li>Instant results</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>🎤 Synced Lyrics</h3>
+      <ul>
+        <li>Real-time lyrics display</li>
+        <li>Auto-fetch for supported tracks</li>
+        <li>Karaoke-style highlighting</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h3>📡 Spotify Integration</h3>
+      <ul>
+        <li>Import playlists directly from Spotify</li>
+        <li>Convert streaming tracks to local files</li>
+        <li>Keep your collection in sync</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
 ---
 
-## Advanced Features
 
-- **Public Library Sharing:** Share your libraries with others via public links; supports pagination for large libraries.
-- **Metadata Inspection:** View detailed audio metadata (tags, format, bitrate) for each track.
-- **Album/Artist Browser:** Browse and explore albums and artists with detailed views.
-- **Lyrics Synchronization:** Real-time, synced lyrics display for supported tracks.
-- **Power-User Workflows:**
-  - Batch add/remove tracks to/from libraries
-  - Drag-and-drop queue management
-  - Keyboard shortcuts for playback and navigation
 
----
+## 📈 Star History
 
-## UI / UX Highlights
-
-- **Sidebar Navigation:** Quick access to Library, Downloads, Favorites, Recently Played, Settings, and Profile.
-- **Responsive Layout:** Adapts to various window sizes for optimal usability.
-- **Tooltips & Notifications:** Contextual tooltips and toast notifications provide feedback for actions and errors.
-- **Accessibility:** Keyboard navigation and high-contrast color scheme for improved accessibility.
+<a href="https://star-history.com/#0xarchit/0xDABmusic&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=0xarchit/0xDABmusic&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=0xarchit/0xDABmusic&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=0xarchit/0xDABmusic&type=Date" />
+ </picture>
+</a>
 
 ---
 
-## Versioning
-
-- The app version is defined in `version.json` (field: `code`).
-- On build, the version propagates to:
-  - The UI (About dialog, window title)
-  - Build artifacts (filenames, installer metadata)
-  - Release notes
-- To update the version:
-  1. Edit `version.json`
-  2. Run the build script (`build_release.ps1` or Docker build)
-  3. The version is automatically synced in `wails.json` and all outputs
-
----
-
-## Usage Tips (Power Users)
-
-- **Force Refresh:** Use the "Clear All Cache" option in Settings to reset cached data.
-- **Copy Shareable Links:** Open libraries go to setting to make public and then copy public URLs.
-- **Manage Large Queues:** Use batch selection and removal tools in the queue manager.
-- **Performance:** Lower concurrency and cache size in Settings for better performance on low-end systems.
-
----
-
-## Troubleshooting
-
-- **Login Issues:**
-  - Ensure your credentials are correct; reset password if needed.
-  - Check network connectivity for API access.
-- **Spotify Auth Problems:**
-  - Make sure your Spotify account is active and permissions are granted.
-- **Network/API Failures:**
-  - Retry after checking your internet connection.
-  - Some features require external APIs (Spotify, lyrics); ensure they are reachable.
-- **Build/Install Errors:**
-  - For Windows, run the installer as administrator if you encounter permission errors.
-  - For Linux, ensure all dependencies are installed and Docker is running for packaging.
-- **Platform Quirks:**
-  - On Windows, antivirus may flag unsigned executables; allow the app manually.
-  - On Linux, set executable permissions if needed: `chmod +x 0xDABmusic*`
-
----
-
-## Contributing & Building from Source
-
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/0xarchit/0xDABmusic
-   cd 0xDABmusic
-   ```
-2. **Install prerequisites:**
-   - Go 1.21+
-   - Node.js 22.x
-   - Wails CLI
-   - Docker (for Linux packaging)
-3. **Install frontend dependencies:**
-   ```sh
-   cd frontend
-   npm install
-   cd ..
-   ```
-4. **Build (Development):**
-   ```sh
-   wails dev
-   ```
-5. **Build (Production):**
-   - **Windows (Full Release with Docker):**
-     ```powershell
-     ./build_release.ps1
-     ```
-   - **Windows (Native Only - No Docker):**
-     ```powershell
-     ./build_windows.ps1
-     ```
-     *Requires MinGW-w64 (GCC) in PATH.*
-   - **Linux:**
-     ```bash
-     chmod +x build_release.sh
-     ./build_release.sh
-     ```
-
-### Setting up MinGW-w64 on Windows
-If you want to build natively on Windows without Docker (using `build_windows.ps1`), you need a C compiler.
-1. **Check if installed:** Open PowerShell and run `gcc --version`.
-2. **Install (if missing):**
-   - Download **MinGW-w64** via [MSYS2](https://www.msys2.org/) (Recommended) or [w64devkit](https://github.com/skeeto/w64devkit).
-   - Or download standalone binaries from [winlibs.com](https://winlibs.com/).
-   - Add the `bin` folder to your System PATH environment variable.
-   - Restart your terminal and verify with `gcc --version`.
-6. **Update Version:**
-   - Edit `version.json` and rerun the build script.
-
-**Contribution Guidelines:**
-- Use feature branches and submit pull requests for all changes
-- Write clear commit messages
-- Follow code style and linting rules
-
----
-
-## Credits & License
-
-- **License:** MIT
-- **Major Dependencies:**
-  - [Wails](https://wails.io/)
-  - [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
-  - [TailwindCSS](https://tailwindcss.com/)
-- **Contact & Support:**
-  - For issues, open a ticket on the Issues page
-  - For questions or support, contact the maintainer at [mail@0xarchit.is-a.dev]
+<p align="center">
+  Built with ❤️ by <a href="https://github.com/0xarchit">0xArchit</a> using 
+  <a href="https://wails.io">Wails</a> & <a href="https://react.dev">React</a>.
+</p>
