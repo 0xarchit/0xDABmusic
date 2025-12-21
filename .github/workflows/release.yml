@@ -90,7 +90,6 @@ jobs:
           path: build/artifacts/*
 
   build-windows:
-    needs: build-linux
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -159,7 +158,6 @@ jobs:
           path: build/artifacts/*.zip
 
   build-macos:
-    needs: build-linux
     runs-on: macos-latest
     steps:
       - name: Checkout code
