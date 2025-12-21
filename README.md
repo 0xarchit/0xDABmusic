@@ -66,6 +66,28 @@ sudo pacman -U 0xDABmusic-<version>-x86_64.pkg.tar.zst
 
 ---
 
+## 🚀 Getting Started
+
+### 1. Create a DAB Account
+0xDABmusic requires a DAB account to access cloud features.
+- Register at **[dab.yeet.su](https://dab.yeet.su/)**
+- Use these credentials to log in to the app.
+
+### 2. Spotify Integration (Recommended)
+To enable playlist imports and enhanced metadata:
+1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and log in.
+2. Click **"Create App"**.
+3. Fill in the details:
+   - **App Name:** `0xDABmusic`
+   - **App Description:** `music`
+   - **Redirect URI:** `http://127.0.0.1:8888/callback`
+   - **Which API/SDKs are you planning to use?**: Select **"Web API"**.
+4. Once created, go to **Settings** in your dashboard.
+5. Copy the **Client ID** and **Client Secret**.
+6. Open **0xDABmusic > Settings** and paste them into the Spotify configuration section.
+
+---
+
 ## ✨ Features
 
 <table>
