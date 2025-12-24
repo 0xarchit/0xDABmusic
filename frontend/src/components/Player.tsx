@@ -376,6 +376,14 @@ export function Player() {
             pause();
           }
         }}
+        onError={() => {
+          const mediaError = audioRef.current?.error;
+          const code = mediaError?.code;
+          pause();
+          toast.error(
+            code ? `Playback failed (code ${code})` : "Playback failed"
+          );
+        }}
       />
       <audio ref={nextAudioRef} src={nextTrackUrl} preload="auto" />
     </>

@@ -92,7 +92,7 @@ sudo pacman -U ./0xDABmusic-<version>-*-x86_64.pkg.tar.zst
 0xDABmusic requires WebKitGTK (the `webkit2gtk` package) to be installed on your system.
 
 ```bash
-sudo pacman -S --needed webkit2gtk-4.1
+sudo pacman -S --needed webkit2gtk-4.1 gstreamer gst-plugins-base gst-plugins-good
 ```
 
 ---
