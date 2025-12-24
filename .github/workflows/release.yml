@@ -27,15 +27,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev build-essential pkg-config mingw-w64 binutils-mingw-w64 icoutils imagemagick
-          # Ubuntu 24.04 (noble) uses libwebkit2gtk-4.1-dev; fallback to 4.0 for older distros
           sudo apt-get install -y libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev
-          # Optional but recommended for some webview builds
           sudo apt-get install -y libsoup-3.0-dev || true
-          # Provide a pkg-config alias so libraries expecting webkit2gtk-4.0 will work on 24.04
           if [ -f /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc ] && [ ! -f /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc ]; then
             sudo ln -s /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
           fi
-          # Verify pkg-config can resolve at least one WebKitGTK version
+          sudo apt-get install -y libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good libgles2 bubblewrap xdg-dbus-proxy libenchant-2-2 libgstreamer-gl1.0-0 libgstreamer-plugins-base1.0-0 libharfbuzz-icu0 libhyphen0 libmanette-0.2-0 libsecret-1-0 libsoup-3.0-0 libwebpdemux2 libwebpmux3 libwoff1 libxslt1.1
           pkg-config --exists webkit2gtk-4.0 || pkg-config --exists webkit2gtk-4.1
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -61,7 +58,7 @@ jobs:
           # 4. Build
           cd frontend && npm install && cd ..
           wails build -platform linux/amd64 -clean -ldflags "-s -w"
-          
+
           if [ ! -f build/bin/0xDABmusic ]; then echo "Linux build failed"; exit 1; fi
 
           # 5. Package (NFPM)
@@ -82,7 +79,7 @@ jobs:
           token: ${{ secrets.GIT_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
-      
+
       - name: Upload Artifacts for Scanning
         uses: actions/upload-artifact@v4
         with:
@@ -112,13 +109,13 @@ jobs:
         shell: bash
         run: |
           VERSION=$(python3 -c "import json; print(json.load(open('version.json'))['code'])")
-          
+
           # Build Binary
           wails build -platform windows/amd64 -clean -ldflags "-s -w"
-          
+
           # Prepare Directories
           mkdir -p build/artifacts
-          
+
           # Check Binary
           if [ ! -f "build/bin/0xDABmusic.exe" ]; then
              echo "Windows build failed!"
@@ -127,19 +124,19 @@ jobs:
 
           # Create Installer via NSIS
           makensis -DVERSION="$VERSION" build/windows/installer.nsi
-          
+
           # Bundle artifacts into single zip
           cd build/artifacts
-          
+
           # Rename standalone exe
           cp ../bin/0xDABmusic.exe "0xDABmusic_Portable_${VERSION}.exe"
-          
+
           # Zip both Setup and Portable into one bundle
           7z a -tzip "0xDABmusic_${VERSION}_windows_bundle.zip" "0xDABmusic_Setup_${VERSION}.exe" "0xDABmusic_Portable_${VERSION}.exe"
-          
+
           # Cleanup raw files so they aren't uploaded
           rm "0xDABmusic_Setup_${VERSION}.exe" "0xDABmusic_Portable_${VERSION}.exe"
-          
+
           cd ../..
 
       - name: Upload to Release
@@ -150,7 +147,7 @@ jobs:
           token: ${{ secrets.GIT_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
-    
+
       - name: Upload Artifacts for Scanning
         uses: actions/upload-artifact@v4
         with:
@@ -184,7 +181,7 @@ jobs:
           # 1. Extract Version
           VERSION=$(python3 -c "import json; print(json.load(open('version.json'))['code'])")
           echo "Building version: $VERSION"
-          
+
           # Update Info.plist with dynamic version
           plutil -replace CFBundleShortVersionString -string "$VERSION" build/darwin/Info.plist
           plutil -replace CFBundleVersion -string "$VERSION" build/darwin/Info.plist
@@ -198,7 +195,7 @@ jobs:
 
           # 4. Prepare Artifacts
           mkdir -p build/artifacts
-          
+
           # 5. Create DMG Installer
           echo "Creating DMG Installer..."
           create-dmg \
@@ -218,7 +215,7 @@ jobs:
           cp "../../build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg" .
           zip -r "../../build/artifacts/0xDABmusic_${VERSION}_macos_bundle.zip" "0xDABmusic.app" "0xDABmusic_${VERSION}_macos_universal.dmg"
           cd ../..
-          
+
           # Cleanup raw dmg so only the bundle is uploaded
           rm "build/artifacts/0xDABmusic_${VERSION}_macos_universal.dmg"
 
@@ -243,7 +240,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -292,7 +289,7 @@ jobs:
           touch scan_results.md
           echo "### 🛡️ VirusTotal Scan Results" >> scan_results.md
           echo "" >> scan_results.md
-          
+
           # Scan all zip files
           find artifacts -name "*.zip" | while read -r file; do
              scan_file "$file"
@@ -300,28 +297,28 @@ jobs:
 
           echo "" >> scan_results.md
           echo "ℹ️ _Note: VirusTotal results may take a few moments to populate if this is the first time the file has been seen._" >> scan_results.md
-          
+
           # Prepare Release Body Update
           # We want to prepend generic info and append scan results
-          
+
           echo "Updating Release Description..."
-          
+
           CURRENT_BODY=$(gh release view "$TAG_NAME" --json body -q .body)
-          
+
           echo "### 📀 Installation Recommended" > new_body.md
           echo "" >> new_body.md
           echo "> **Windows Users**: Please use the **Setup** file for the best experience." >> new_body.md
           echo "" >> new_body.md
           echo "> ⚠️ **Linux & macOS**: These builds are currently **UNTESTED**. Please report any issues!" >> new_body.md
           echo "" >> new_body.md
-          
+
           echo "$CURRENT_BODY" >> new_body.md
-          
+
           echo "" >> new_body.md
           cat scan_results.md >> new_body.md
-          
+
           gh release edit "$TAG_NAME" --notes-file new_body.md
-          
+
   deploy-pages:
     needs: scan-and-update-release
     runs-on: ubuntu-latest

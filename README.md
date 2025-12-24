@@ -58,12 +58,29 @@ Download the **macOS Bundle (Zip)**. It contains:
 > **Note:** Since we don't have an Apple Developer ID yet, you may need to **Right Click > Open** the app for the first time if you see "App is damaged" or "Unidentified Developer".
 
 ### Linux
-We support major distributions natively (Now Only Linux and Windows Supported).
 
 **Debian / Ubuntu:**
 ```bash
 sudo dpkg -i 0xDABmusic_<version>_amd64.deb
 ```
+
+**.deb Package Dependencies:**
+
+The .deb package for 0xDABmusic depends on system libraries, especially WebKitGTK (libwebkit2gtk). This library is not bundled with the app and must be installed on your system.
+
+**Ubuntu 24.04 and newer:**
+```
+sudo apt-get update
+sudo apt-get install libwebkit2gtk-4.1-0
+```
+
+**Ubuntu 22.04 and older:**
+```
+sudo apt-get update
+sudo apt-get install libwebkit2gtk-4.0-37
+```
+
+If you get dependency errors, make sure you are using the .deb built for your Ubuntu version. The .deb built on Ubuntu 24.04+ will not work on older Ubuntu, and vice versa.
 
 **Arch Linux:**
 ```bash
