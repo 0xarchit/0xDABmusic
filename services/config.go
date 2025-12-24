@@ -32,8 +32,12 @@ func GetConfigDir() (string, error) {
 		home, herr := os.UserHomeDir()
 		if herr == nil && home != "" {
 			oldDir := filepath.Join(home, ".0xdabmusic")
+			altOldDir := filepath.Join(home, ".0xDABmusic")
 			if dirExists(oldDir) && !dirExists(newDir) {
 				return oldDir, nil
+			}
+			if dirExists(altOldDir) && !dirExists(newDir) {
+				return altOldDir, nil
 			}
 		}
 		return newDir, nil
@@ -127,6 +131,7 @@ func LoadConfig() (*Config, error) {
 			SpotifyRedirectURI:  "http://127.0.0.1:8888/callback",
 			DABAPIBase:          "https://dabmusic.xyz/api",
 			FuzzyMatchScale:     85,
+			MaxConcurrency:      3,
 			DownloadPath:        defaultDownloadPath(),
 			MaxCacheSize:        1024 * 1024 * 1024,
 		}
@@ -146,6 +151,9 @@ func LoadConfig() (*Config, error) {
 
 	if cfg.FuzzyMatchScale == 0 {
 		cfg.FuzzyMatchScale = 85
+	}
+	if cfg.MaxConcurrency <= 0 {
+		cfg.MaxConcurrency = 3
 	}
 	if cfg.MaxCacheSize == 0 {
 		cfg.MaxCacheSize = 1024 * 1024 * 1024

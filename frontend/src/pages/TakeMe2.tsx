@@ -55,7 +55,7 @@ export function TakeMe2Page() {
 
   const checkForUpdates = async () => {
     if (version === "Loading..." || version === "Unknown") return;
-    
+
     setCheckingUpdate(true);
     try {
       const response = await fetch(
@@ -63,7 +63,7 @@ export function TakeMe2Page() {
       );
       const data = await response.json();
       const latest = data.tag_name.replace(/^v/, "");
-      
+
       if (latest !== version) {
         setUpdateAvailable(true);
         toast.success(`Update available: v${latest}`);
@@ -90,7 +90,7 @@ export function TakeMe2Page() {
     try {
       await window.go.main.App.OpenMusicFolder();
     } catch (e) {
-      toast.error("Failed to open folder");
+      toast.error(String((e as any)?.message || e));
     }
   };
 
@@ -98,7 +98,7 @@ export function TakeMe2Page() {
     try {
       await window.go.main.App.OpenConfigFolder();
     } catch (e) {
-      toast.error("Failed to open folder");
+      toast.error(String((e as any)?.message || e));
     }
   };
 
@@ -181,7 +181,9 @@ export function TakeMe2Page() {
                 size="sm"
                 onClick={() =>
                   updateAvailable
-                    ? openLink("https://github.com/0xarchit/0xDABmusic/releases")
+                    ? openLink(
+                        "https://github.com/0xarchit/0xDABmusic/releases"
+                      )
                     : checkForUpdates()
                 }
                 disabled={checkingUpdate}

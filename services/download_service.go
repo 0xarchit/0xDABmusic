@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -52,13 +53,17 @@ func NewDownloadService(cfg *Config, dab *DABService) *DownloadService {
 	dir, _ := GetConfigDir()
 	_ = os.MkdirAll(dir, 0755)
 	historyFile := filepath.Join(dir, "download_history.json")
+	maxActive := cfg.MaxConcurrency
+	if maxActive <= 0 {
+		maxActive = 1
+	}
 
 	ds := &DownloadService{
 		config:      cfg,
 		dabService:  dab,
 		queue:       make([]*DownloadItem, 0),
 		history:     make([]*DownloadItem, 0),
-		maxActive:   cfg.MaxConcurrency,
+		maxActive:   maxActive,
 		updates:     make(chan *DownloadItem, 100),
 		historyFile: historyFile,
 	}
@@ -133,7 +138,7 @@ func (s *DownloadService) downloadTrack(item *DownloadItem) {
 	downloadPath := filepath.Join(s.config.DownloadPath, fileName)
 
 	if err := os.MkdirAll(s.config.DownloadPath, 0755); err != nil {
-		s.failDownload(item, "Failed to create download directory")
+		s.failDownload(item, err.Error())
 		return
 	}
 
@@ -144,23 +149,38 @@ func (s *DownloadService) downloadTrack(item *DownloadItem) {
 	}
 	defer out.Close()
 
+	client := &http.Client{}
+	setHeaders := func(r *http.Request) {
+		r.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337.0.0.0 Safari/537.36")
+		if strings.Contains(streamURL, "youtube.com") || strings.Contains(streamURL, "googlevideo.com") {
+			r.Header.Set("Referer", "https://music.youtube.com/")
+			r.Header.Set("Origin", "https://music.youtube.com")
+		}
+		if strings.Contains(streamURL, s.config.DABAPIBase) && s.config.DABAuthToken != "" {
+			r.AddCookie(&http.Cookie{Name: "session", Value: s.config.DABAuthToken})
+		}
+	}
+
+	var totalSize int64
+	headReq, herr := http.NewRequest("HEAD", streamURL, nil)
+	if herr == nil {
+		setHeaders(headReq)
+		if headResp, err := client.Do(headReq); err == nil {
+			cl := headResp.Header.Get("Content-Length")
+			_ = headResp.Body.Close()
+			if n, perr := strconv.ParseInt(strings.TrimSpace(cl), 10, 64); perr == nil && n > 0 {
+				totalSize = n
+			}
+		}
+	}
+
 	req, err := http.NewRequest("GET", streamURL, nil)
 	if err != nil {
 		s.failDownload(item, err.Error())
 		return
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337.0.0.0 Safari/537.36")
+	setHeaders(req)
 
-	if strings.Contains(streamURL, "youtube.com") || strings.Contains(streamURL, "googlevideo.com") {
-		req.Header.Set("Referer", "https://music.youtube.com/")
-		req.Header.Set("Origin", "https://music.youtube.com")
-	}
-
-	if strings.Contains(streamURL, s.config.DABAPIBase) && s.config.DABAuthToken != "" {
-		req.AddCookie(&http.Cookie{Name: "session", Value: s.config.DABAuthToken})
-	}
-
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		s.failDownload(item, err.Error())
@@ -168,7 +188,16 @@ func (s *DownloadService) downloadTrack(item *DownloadItem) {
 	}
 	defer resp.Body.Close()
 
-	item.TotalSize = resp.ContentLength
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
+		s.failDownload(item, fmt.Sprintf("HTTP %d", resp.StatusCode))
+		return
+	}
+
+	if totalSize <= 0 {
+		totalSize = resp.ContentLength
+	}
+	item.TotalSize = totalSize
+
 	item.FilePath = downloadPath
 
 	buf := make([]byte, 32*1024)

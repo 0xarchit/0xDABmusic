@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	stdruntime "runtime"
 	"strconv"
@@ -67,6 +68,9 @@ func (a *App) OpenBrowser(url string) {
 }
 
 func (a *App) OpenMusicFolder() error {
+	if err := os.MkdirAll(a.config.DownloadPath, 0755); err != nil {
+		return err
+	}
 	if stdruntime.GOOS == "windows" {
 		return exec.Command("explorer", a.config.DownloadPath).Start()
 	}
@@ -74,7 +78,15 @@ func (a *App) OpenMusicFolder() error {
 		return exec.Command("open", a.config.DownloadPath).Start()
 	}
 	if stdruntime.GOOS == "linux" {
-		return exec.Command("xdg-open", a.config.DownloadPath).Start()
+		err1 := exec.Command("xdg-open", a.config.DownloadPath).Start()
+		if err1 == nil {
+			return nil
+		}
+		err2 := exec.Command("gio", "open", a.config.DownloadPath).Start()
+		if err2 == nil {
+			return nil
+		}
+		return fmt.Errorf("xdg-open: %v; gio: %v", err1, err2)
 	}
 	runtime.BrowserOpenURL(a.ctx, "file:///"+a.config.DownloadPath)
 	return nil
@@ -85,6 +97,9 @@ func (a *App) OpenConfigFolder() error {
 	if err != nil {
 		return err
 	}
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
 	if stdruntime.GOOS == "windows" {
 		return exec.Command("explorer", dir).Start()
 	}
@@ -92,7 +107,15 @@ func (a *App) OpenConfigFolder() error {
 		return exec.Command("open", dir).Start()
 	}
 	if stdruntime.GOOS == "linux" {
-		return exec.Command("xdg-open", dir).Start()
+		err1 := exec.Command("xdg-open", dir).Start()
+		if err1 == nil {
+			return nil
+		}
+		err2 := exec.Command("gio", "open", dir).Start()
+		if err2 == nil {
+			return nil
+		}
+		return fmt.Errorf("xdg-open: %v; gio: %v", err1, err2)
 	}
 	runtime.BrowserOpenURL(a.ctx, "file:///"+dir)
 	return nil
