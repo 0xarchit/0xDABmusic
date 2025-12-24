@@ -6,8 +6,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	stdruntime "runtime"
 	"strconv"
@@ -58,7 +60,10 @@ func (a *App) startup(ctx context.Context) {
 	go func() {
 		http.HandleFunc("/stream", a.cacheService.GetStream)
 		http.HandleFunc("/image", a.cacheService.GetImage)
-		http.ListenAndServe(":34116", nil)
+		srv := &http.Server{Addr: "127.0.0.1:34116", Handler: nil}
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("stream server error: %v", err)
+		}
 	}()
 }
 
@@ -66,9 +71,66 @@ func (a *App) OpenBrowser(url string) {
 	runtime.BrowserOpenURL(a.ctx, url)
 }
 
+func runFirstLinuxOpen(dir string, cmd string, args ...string) error {
+	candidates := []string{cmd}
+	if cmd == "xdg-open" {
+		candidates = append(candidates, "/usr/bin/xdg-open", "/bin/xdg-open")
+	}
+	if cmd == "gio" {
+		candidates = append(candidates, "/usr/bin/gio", "/bin/gio")
+	}
+	var lastErr error
+	for _, c := range candidates {
+		path := c
+		if len(c) == 0 {
+			continue
+		}
+		if c[0] != '/' {
+			p, err := exec.LookPath(c)
+			if err != nil {
+				lastErr = err
+				continue
+			}
+			path = p
+		} else {
+			if _, err := os.Stat(c); err != nil {
+				lastErr = err
+				continue
+			}
+		}
+		allArgs := append(args, dir)
+		if err := exec.Command(path, allArgs...).Start(); err != nil {
+			lastErr = err
+			continue
+		}
+		return nil
+	}
+	if lastErr != nil {
+		return lastErr
+	}
+	return fmt.Errorf("no opener available")
+}
+
 func (a *App) OpenMusicFolder() error {
+	if err := os.MkdirAll(a.config.DownloadPath, 0755); err != nil {
+		return err
+	}
 	if stdruntime.GOOS == "windows" {
 		return exec.Command("explorer", a.config.DownloadPath).Start()
+	}
+	if stdruntime.GOOS == "darwin" {
+		return exec.Command("open", a.config.DownloadPath).Start()
+	}
+	if stdruntime.GOOS == "linux" {
+		err1 := runFirstLinuxOpen(a.config.DownloadPath, "xdg-open")
+		if err1 == nil {
+			return nil
+		}
+		err2 := runFirstLinuxOpen(a.config.DownloadPath, "gio", "open")
+		if err2 == nil {
+			return nil
+		}
+		return fmt.Errorf("xdg-open: %v; gio: %v", err1, err2)
 	}
 	runtime.BrowserOpenURL(a.ctx, "file:///"+a.config.DownloadPath)
 	return nil
@@ -79,8 +141,25 @@ func (a *App) OpenConfigFolder() error {
 	if err != nil {
 		return err
 	}
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
 	if stdruntime.GOOS == "windows" {
 		return exec.Command("explorer", dir).Start()
+	}
+	if stdruntime.GOOS == "darwin" {
+		return exec.Command("open", dir).Start()
+	}
+	if stdruntime.GOOS == "linux" {
+		err1 := runFirstLinuxOpen(dir, "xdg-open")
+		if err1 == nil {
+			return nil
+		}
+		err2 := runFirstLinuxOpen(dir, "gio", "open")
+		if err2 == nil {
+			return nil
+		}
+		return fmt.Errorf("xdg-open: %v; gio: %v", err1, err2)
 	}
 	runtime.BrowserOpenURL(a.ctx, "file:///"+dir)
 	return nil
@@ -297,10 +376,10 @@ func (a *App) GetStreamURL(trackID interface{}) (string, error) {
 	}
 
 	if path, ok := a.downloadService.GetDownloadedFilePath(idStr); ok {
-		return fmt.Sprintf("http://localhost:34116/stream?trackId=%s&path=%s", idStr, url.QueryEscape(path)), nil
+		return fmt.Sprintf("http://127.0.0.1:34116/stream?trackId=%s&path=%s", idStr, url.QueryEscape(path)), nil
 	}
 
-	return fmt.Sprintf("http://localhost:34116/stream?trackId=%s", idStr), nil
+	return fmt.Sprintf("http://127.0.0.1:34116/stream?trackId=%s", idStr), nil
 }
 
 func (a *App) GetFavorites() ([]services.DABTrack, error) {

@@ -34,6 +34,7 @@ func NewHistoryManager() (*HistoryManager, error) {
 	if err != nil {
 		return nil, err
 	}
+	_ = os.MkdirAll(dir, 0755)
 
 	historyFile := filepath.Join(dir, "transfer_history.json")
 	return &HistoryManager{historyFile: historyFile}, nil
@@ -55,7 +56,9 @@ func (hm *HistoryManager) AddRecord(record TransferRecord) error {
 	if err != nil {
 		return err
 	}
-
+	if err := os.MkdirAll(filepath.Dir(hm.historyFile), 0755); err != nil {
+		return err
+	}
 	return os.WriteFile(hm.historyFile, data, 0644)
 }
 
@@ -79,6 +82,9 @@ func (hm *HistoryManager) LoadRecords() ([]TransferRecord, error) {
 
 func (hm *HistoryManager) ClearHistory() error {
 	data, _ := json.MarshalIndent([]TransferRecord{}, "", "  ")
+	if err := os.MkdirAll(filepath.Dir(hm.historyFile), 0755); err != nil {
+		return err
+	}
 	return os.WriteFile(hm.historyFile, data, 0644)
 }
 
@@ -118,7 +124,9 @@ func (hm *HistoryManager) UpdateRecord(id string, updates map[string]interface{}
 	if err != nil {
 		return err
 	}
-
+	if err := os.MkdirAll(filepath.Dir(hm.historyFile), 0755); err != nil {
+		return err
+	}
 	return os.WriteFile(hm.historyFile, data, 0644)
 }
 
@@ -139,6 +147,8 @@ func (hm *HistoryManager) DeleteRecord(id string) error {
 	if err != nil {
 		return err
 	}
-
+	if err := os.MkdirAll(filepath.Dir(hm.historyFile), 0755); err != nil {
+		return err
+	}
 	return os.WriteFile(hm.historyFile, data, 0644)
 }

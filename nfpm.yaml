@@ -26,4 +26,7 @@ overrides:
   archlinux:
     depends:
       - gtk3
-      - webkit2gtk
+      - webkit2gtk-4.1
+      - gstreamer
+      - gst-plugins-base
+      - gst-plugins-good

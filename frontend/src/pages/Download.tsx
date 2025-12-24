@@ -92,8 +92,20 @@ export function DownloadPage() {
       toast.success(`Added to queue: ${track.title}`);
       fetchQueue();
     } catch (error) {
-      toast.error("Download failed");
+      toast.error(String((error as any)?.message || error));
     }
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    const exp = Math.min(
+      Math.floor(Math.log(bytes) / Math.log(1024)),
+      units.length - 1
+    );
+    const value = bytes / Math.pow(1024, exp);
+    const decimals = exp === 0 ? 0 : value >= 10 ? 1 : 2;
+    return `${value.toFixed(decimals)} ${units[exp]}`;
   };
 
   const downloadAll = async () => {
@@ -107,7 +119,7 @@ export function DownloadPage() {
 
   const playLocalTrack = (item: any) => {
     if (item.filePath) {
-      const streamUrl = `http://localhost:34116/stream?trackId=${
+      const streamUrl = `http://127.0.0.1:34116/stream?trackId=${
         item.trackId
       }&path=${encodeURIComponent(item.filePath)}`;
       play({
@@ -253,9 +265,14 @@ export function DownloadPage() {
                     {item.artist}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
-                    <Progress value={item.progress} className="h-2" />
+                    <Progress
+                      value={item.totalSize > 0 ? item.progress : 0}
+                      className="h-2"
+                    />
                     <span className="text-xs text-muted-foreground w-12 text-right">
-                      {Math.round(item.progress)}%
+                      {item.totalSize > 0
+                        ? `${Math.round(item.progress)}%`
+                        : formatBytes(item.downloaded || 0)}
                     </span>
                   </div>
                 </div>

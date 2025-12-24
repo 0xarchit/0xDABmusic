@@ -2,6 +2,10 @@ package main
 
 import (
 	"embed"
+	"log"
+	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -11,7 +15,34 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+var logFile *os.File
+
+func initLogging() {
+	dir, err := os.UserCacheDir()
+	if err != nil || dir == "" {
+		return
+	}
+	path := filepath.Join(dir, "0xDABmusic")
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return
+	}
+	f, err := os.OpenFile(filepath.Join(path, "app.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return
+	}
+	logFile = f
+	log.SetOutput(f)
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	log.Printf("startup %s/%s", runtime.GOOS, runtime.GOARCH)
+}
+
 func main() {
+	initLogging()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic: %v", r)
+		}
+	}()
 
 	app := NewApp()
 
@@ -30,6 +61,6 @@ func main() {
 	})
 
 	if err != nil {
-		println("Error:", err.Error())
+		log.Printf("Error: %v", err)
 	}
 }

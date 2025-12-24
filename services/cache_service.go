@@ -95,7 +95,7 @@ func (s *CacheService) ClearAPICache() {
 
 func (s *CacheService) GetStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	if r.Method == "OPTIONS" {
@@ -133,16 +133,27 @@ func (s *CacheService) GetStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := http.NewRequest("GET", streamURL, nil)
+	method := r.Method
+	if method == "" {
+		method = "GET"
+	}
+	req, err := http.NewRequest(method, streamURL, nil)
 	if err != nil {
 		http.Error(w, "failed to create request: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337.0.0.0 Safari/537.36")
+	if rng := r.Header.Get("Range"); rng != "" {
+		req.Header.Set("Range", rng)
+	}
 
 	if strings.Contains(streamURL, "youtube.com") || strings.Contains(streamURL, "googlevideo.com") {
 		req.Header.Set("Referer", "https://music.youtube.com/")
 		req.Header.Set("Origin", "https://music.youtube.com")
+	}
+
+	if strings.Contains(streamURL, s.config.DABAPIBase) && s.config.DABAuthToken != "" {
+		req.AddCookie(&http.Cookie{Name: "session", Value: s.config.DABAuthToken})
 	}
 
 	client := &http.Client{}
@@ -153,10 +164,11 @@ func (s *CacheService) GetStream(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	tmpFile := cacheFile + ".tmp"
-	out, err := os.Create(tmpFile)
-	if err != nil {
-
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
+		for k, v := range resp.Header {
+			w.Header()[k] = v
+		}
+		w.WriteHeader(resp.StatusCode)
 		io.Copy(w, resp.Body)
 		return
 	}
@@ -165,6 +177,21 @@ func (s *CacheService) GetStream(w http.ResponseWriter, r *http.Request) {
 		w.Header()[k] = v
 	}
 	w.WriteHeader(resp.StatusCode)
+	if r.Method == "HEAD" {
+		return
+	}
+
+	if r.Header.Get("Range") != "" || resp.StatusCode == http.StatusPartialContent {
+		io.Copy(w, resp.Body)
+		return
+	}
+
+	tmpFile := cacheFile + ".tmp"
+	out, err := os.Create(tmpFile)
+	if err != nil {
+		io.Copy(w, resp.Body)
+		return
+	}
 
 	mw := io.MultiWriter(w, out)
 	_, err = io.Copy(mw, resp.Body)
