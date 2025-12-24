@@ -101,7 +101,7 @@ sudo pacman -S --needed webkit2gtk-4.1 gstreamer gst-plugins-base gst-plugins-go
 
 ### 1. Create a DAB Account
 0xDABmusic requires a DAB account to access cloud features.
-- Register at **[dab.yeet.su](https://dab.yeet.su/)**
+- Register at **[dabmusic.xyz](https://dabmusic.xyz/)**
 - Use these credentials to log in to the app.
 
 ### 2. Spotify Integration (Recommended)
