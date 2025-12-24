@@ -70,6 +70,12 @@ func (a *App) OpenMusicFolder() error {
 	if stdruntime.GOOS == "windows" {
 		return exec.Command("explorer", a.config.DownloadPath).Start()
 	}
+	if stdruntime.GOOS == "darwin" {
+		return exec.Command("open", a.config.DownloadPath).Start()
+	}
+	if stdruntime.GOOS == "linux" {
+		return exec.Command("xdg-open", a.config.DownloadPath).Start()
+	}
 	runtime.BrowserOpenURL(a.ctx, "file:///"+a.config.DownloadPath)
 	return nil
 }
@@ -81,6 +87,12 @@ func (a *App) OpenConfigFolder() error {
 	}
 	if stdruntime.GOOS == "windows" {
 		return exec.Command("explorer", dir).Start()
+	}
+	if stdruntime.GOOS == "darwin" {
+		return exec.Command("open", dir).Start()
+	}
+	if stdruntime.GOOS == "linux" {
+		return exec.Command("xdg-open", dir).Start()
 	}
 	runtime.BrowserOpenURL(a.ctx, "file:///"+dir)
 	return nil

@@ -87,6 +87,14 @@ If you get dependency errors, make sure you are using the .deb built for your Ub
 sudo pacman -U 0xDABmusic-<version>-x86_64.pkg.tar.zst
 ```
 
+**Arch Linux Dependencies (required):**
+
+0xDABmusic requires WebKitGTK (the `webkit2gtk` package) to be installed on your system.
+
+```bash
+sudo pacman -S --needed webkit2gtk
+```
+
 ---
 
 ## 🚀 Getting Started

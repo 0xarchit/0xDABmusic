@@ -50,6 +50,7 @@ type DownloadService struct {
 
 func NewDownloadService(cfg *Config, dab *DABService) *DownloadService {
 	dir, _ := GetConfigDir()
+	_ = os.MkdirAll(dir, 0755)
 	historyFile := filepath.Join(dir, "download_history.json")
 
 	ds := &DownloadService{
@@ -174,7 +175,10 @@ func (s *DownloadService) downloadTrack(item *DownloadItem) {
 	for {
 		n, err := resp.Body.Read(buf)
 		if n > 0 {
-			out.Write(buf[:n])
+			if _, werr := out.Write(buf[:n]); werr != nil {
+				s.failDownload(item, werr.Error())
+				return
+			}
 			s.mu.Lock()
 			item.Downloaded += int64(n)
 			if item.TotalSize > 0 {
@@ -263,6 +267,9 @@ func (s *DownloadService) saveHistory() error {
 	data, err := json.Marshal(s.history)
 	s.mu.RUnlock()
 	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(s.historyFile), 0755); err != nil {
 		return err
 	}
 	return os.WriteFile(s.historyFile, data, 0644)
