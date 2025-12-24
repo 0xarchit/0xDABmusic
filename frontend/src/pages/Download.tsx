@@ -119,7 +119,7 @@ export function DownloadPage() {
 
   const playLocalTrack = (item: any) => {
     if (item.filePath) {
-      const streamUrl = `http://localhost:34116/stream?trackId=${
+      const streamUrl = `http://127.0.0.1:34116/stream?trackId=${
         item.trackId
       }&path=${encodeURIComponent(item.filePath)}`;
       play({

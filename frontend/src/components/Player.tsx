@@ -384,7 +384,8 @@ export function Player() {
   if (isHidden) return audioElements;
 
   const isLocalTrack =
-    currentTrack?.url?.includes("localhost:34116") &&
+    (currentTrack?.url?.includes("127.0.0.1:34116") ||
+      currentTrack?.url?.includes("localhost:34116")) &&
     currentTrack?.url?.includes("path=");
 
   return (
