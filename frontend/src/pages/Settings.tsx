@@ -31,6 +31,7 @@ export function SettingsPage() {
   const [maxCacheSize, setMaxCacheSize] = useState(1024);
   const [crossfadeDuration, setCrossfadeDuration] = useState(0);
   const [spotifyAuthenticated, setSpotifyAuthenticated] = useState(false);
+  const [spotifyAuthUrl, setSpotifyAuthUrl] = useState("");
 
   useEffect(() => {
     if (window.go?.main?.App?.GetConfig) {
@@ -105,8 +106,22 @@ export function SettingsPage() {
       try {
         const url = await window.go.main.App.SpotifyLogin();
         if (url) {
-          window.open(url, "_blank");
-          toast.info("Please complete login in your browser");
+          setSpotifyAuthUrl(url);
+          if (window.go?.main?.App?.OpenBrowser) {
+            await window.go.main.App.OpenBrowser(url);
+          } else {
+            window.open(url, "_blank");
+          }
+          if (navigator.clipboard?.writeText) {
+            try {
+              await navigator.clipboard.writeText(url);
+              toast.info("Login URL copied to clipboard");
+            } catch {
+              toast.info("Please complete login in your browser");
+            }
+          } else {
+            toast.info("Please complete login in your browser");
+          }
         }
       } catch (e: any) {
         toast.error("Spotify login failed: " + e);
@@ -176,6 +191,35 @@ export function SettingsPage() {
                   : "Login with Spotify"}
               </Button>
             </div>
+
+            {spotifyAuthUrl ? (
+              <div className="grid gap-2 pt-2">
+                <Label htmlFor="spotify-auth-url">Spotify Login URL</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="spotify-auth-url"
+                    readOnly
+                    value={spotifyAuthUrl}
+                    className="bg-slate-900 border-slate-800 text-white placeholder:text-slate-400"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      if (navigator.clipboard?.writeText) {
+                        try {
+                          await navigator.clipboard.writeText(spotifyAuthUrl);
+                          toast.success("Copied");
+                        } catch {
+                          toast.error("Copy failed");
+                        }
+                      }
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
