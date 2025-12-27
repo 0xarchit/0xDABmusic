@@ -152,7 +152,7 @@ func (s *CacheService) GetStream(w http.ResponseWriter, r *http.Request) {
 		req.Header.Set("Origin", "https://music.youtube.com")
 	}
 
-	if strings.Contains(streamURL, s.config.DABAPIBase) && s.config.DABAuthToken != "" {
+	if strings.Contains(streamURL, resolveDABAPIBase(s.config)) && s.config.DABAuthToken != "" {
 		req.AddCookie(&http.Cookie{Name: "session", Value: s.config.DABAuthToken})
 	}
 

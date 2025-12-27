@@ -33,6 +33,7 @@ declare global {
           SpotifyLogin: () => Promise<string>;
           GetSpotifyPlaylist: (url: string) => Promise<any>;
           SaveConfig: (id: string, secret: string) => Promise<void>;
+          SetDABAPIBase: (base: string) => Promise<void>;
           SaveGeneralSettings: (
             fuzzyScale: number,
             maxConcurrency: number,

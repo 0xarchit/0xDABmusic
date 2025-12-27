@@ -243,7 +243,7 @@ func (s *DABService) CreateLibrary(name, description string, tracks []TrackInfo,
 }
 
 func (s *DABService) createLibraryEntity(name, description string) (string, error) {
-	url := fmt.Sprintf("%s/libraries", s.config.DABAPIBase)
+	url := fmt.Sprintf("%s/libraries", resolveDABAPIBase(s.config))
 	payload := CreateLibraryPayload{
 		Name:        name,
 		Description: description,
@@ -289,7 +289,7 @@ func (s *DABService) AddTrackToLibrary(libraryID string, track DABTrack) error {
 		}
 	}
 
-	url := fmt.Sprintf("%s/libraries/%s/tracks", s.config.DABAPIBase, libraryID)
+	url := fmt.Sprintf("%s/libraries/%s/tracks", resolveDABAPIBase(s.config), libraryID)
 
 	var idStr string
 	switch v := track.ID.(type) {
@@ -371,7 +371,7 @@ func (s *DABService) AddTrackToLibrary(libraryID string, track DABTrack) error {
 }
 
 func (s *DABService) RemoveTrackFromLibrary(libraryID, trackID string) error {
-	url := fmt.Sprintf("%s/libraries/%s/tracks/%s", s.config.DABAPIBase, libraryID, trackID)
+	url := fmt.Sprintf("%s/libraries/%s/tracks/%s", resolveDABAPIBase(s.config), libraryID, trackID)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
@@ -397,12 +397,21 @@ func (s *DABService) setHeaders(req *http.Request) {
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
 
-	req.Header.Set("Authorization", "Bearer "+s.config.DABAuthToken)
-	req.AddCookie(&http.Cookie{Name: "session", Value: s.config.DABAuthToken})
+	if s.config.DABAuthToken != "" {
+		req.Header.Set("Authorization", "Bearer "+s.config.DABAuthToken)
+		req.AddCookie(&http.Cookie{Name: "session", Value: s.config.DABAuthToken})
+	} else {
+		req.Header.Del("Authorization")
+	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-	req.Header.Set("Origin", "https://dabmusic.xyz")
-	req.Header.Set("Referer", "https://dabmusic.xyz/")
+	if origin := originFromBase(resolveDABAPIBase(s.config)); origin != "" {
+		req.Header.Set("Origin", origin)
+		req.Header.Set("Referer", origin+"/")
+	} else {
+		req.Header.Del("Origin")
+		req.Header.Del("Referer")
+	}
 	req.Header.Set("Sec-Ch-Ua", `"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"`)
 	req.Header.Set("Sec-Ch-Ua-Mobile", "?0")
 	req.Header.Set("Sec-Ch-Ua-Platform", `"Windows"`)

@@ -135,6 +135,13 @@ func LoadConfig() (*Config, error) {
 			DownloadPath:        defaultDownloadPath(),
 			MaxCacheSize:        1024 * 1024 * 1024,
 		}
+		dotEnvBase := normalizeDABAPIBase(readDotEnvValue("BASE"))
+		if dotEnvBase == "" {
+			dotEnvBase = normalizeDABAPIBase(readDotEnvValue("DAB_API_BASE"))
+		}
+		if dotEnvBase != "" {
+			cfg.DABAPIBase = dotEnvBase
+		}
 		cfg.DownloadPath = resolveDownloadPath(cfg.DownloadPath)
 		return cfg, nil
 	}
@@ -157,6 +164,18 @@ func LoadConfig() (*Config, error) {
 	}
 	if cfg.MaxCacheSize == 0 {
 		cfg.MaxCacheSize = 1024 * 1024 * 1024
+	}
+	if cfg.DABAPIBase == "" {
+		cfg.DABAPIBase = "https://dabmusic.xyz/api"
+	}
+	dotEnvBase := normalizeDABAPIBase(readDotEnvValue("BASE"))
+	if dotEnvBase == "" {
+		dotEnvBase = normalizeDABAPIBase(readDotEnvValue("DAB_API_BASE"))
+	}
+	if dotEnvBase != "" {
+		if cfg.DABAPIBase == "" || cfg.DABAPIBase == "https://dabmusic.xyz/api" || cfg.DABAPIBase == "https://dab.yeet.su/api" {
+			cfg.DABAPIBase = dotEnvBase
+		}
 	}
 	if cfg.DownloadPath == "" {
 		cfg.DownloadPath = defaultDownloadPath()

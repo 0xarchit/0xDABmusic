@@ -80,6 +80,12 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
   const [editLibraryPublic, setEditLibraryPublic] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  const getErrorMessage = (error: any) => {
+    if (!error) return "Unknown error";
+    if (typeof error === "string") return error;
+    return String(error?.message || error);
+  };
+
   const handleSearch = async () => {
     if (!searchQuery) return;
     setIsSearching(true);
@@ -89,7 +95,7 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
       const results = await window.go.main.App.SearchDAB(searchQuery);
       setSearchResults(results || []);
     } catch (error) {
-      toast.error("Search failed");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsSearching(false);
       removeProcess(processId);
@@ -101,7 +107,7 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
       const libs = await window.go.main.App.GetLibraries();
       setLibraries(libs || []);
     } catch (error) {
-      toast.error("Failed to fetch libraries");
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -117,7 +123,21 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
         setLibraryTracks(details.tracks || []);
         toast.success("Library refreshed");
       } catch (error) {
-        toast.error("Failed to refresh library");
+        const msg = getErrorMessage(error);
+        toast.error(msg);
+        if (
+          msg.includes("401") ||
+          msg.includes("403") ||
+          msg.includes("session")
+        ) {
+          if (window.go?.main?.App?.Logout) {
+            try {
+              await window.go.main.App.Logout();
+            } finally {
+              window.location.reload();
+            }
+          }
+        }
       } finally {
         removeProcess(processId);
       }
@@ -133,7 +153,21 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
         }
         toast.success("Refreshed");
       } catch (error) {
-        toast.error("Failed to refresh");
+        const msg = getErrorMessage(error);
+        toast.error(msg);
+        if (
+          msg.includes("401") ||
+          msg.includes("403") ||
+          msg.includes("session")
+        ) {
+          if (window.go?.main?.App?.Logout) {
+            try {
+              await window.go.main.App.Logout();
+            } finally {
+              window.location.reload();
+            }
+          }
+        }
       } finally {
         removeProcess(processId);
       }
@@ -658,11 +692,30 @@ export function LibraryPage({ navigateTo }: LibraryPageProps) {
                   variant="ghost"
                   size="icon"
                   className="text-muted-foreground hover:text-white"
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      `https://dabmusic.xyz/shared/library/${selectedLibrary.id}`
-                    );
-                    toast.success("Library link copied to clipboard");
+                  onClick={async () => {
+                    try {
+                      let shareBase = "https://dabmusic.xyz";
+                      if (window.go?.main?.App?.GetConfig) {
+                        const cfg = await window.go.main.App.GetConfig();
+                        const apiBase = String(cfg?.DAB_API_BASE || "").replace(
+                          /\/+$/,
+                          ""
+                        );
+                        if (apiBase) {
+                          shareBase = apiBase.endsWith("/api")
+                            ? apiBase.slice(0, -4)
+                            : apiBase;
+                        }
+                      }
+                      await navigator.clipboard.writeText(
+                        `${shareBase}/shared/library/${selectedLibrary.id}`
+                      );
+                      toast.success("Library link copied to clipboard");
+                    } catch (e: any) {
+                      toast.error(
+                        String(e?.message || e || "Failed to copy link")
+                      );
+                    }
                   }}
                 >
                   <Copy className="h-6 w-6" />

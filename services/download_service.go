@@ -156,7 +156,7 @@ func (s *DownloadService) downloadTrack(item *DownloadItem) {
 			r.Header.Set("Referer", "https://music.youtube.com/")
 			r.Header.Set("Origin", "https://music.youtube.com")
 		}
-		if strings.Contains(streamURL, s.config.DABAPIBase) && s.config.DABAuthToken != "" {
+		if strings.Contains(streamURL, resolveDABAPIBase(s.config)) && s.config.DABAuthToken != "" {
 			r.AddCookie(&http.Cookie{Name: "session", Value: s.config.DABAuthToken})
 		}
 	}

@@ -11,17 +11,20 @@ export function ProcessingStatus() {
       {processes.map((process, index) => (
         <div
           key={process.id}
-          className="flex items-center gap-3 bg-slate-950/80 backdrop-blur-md border border-slate-800 px-4 py-2.5 rounded-full shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300"
-          style={{
-            animationDelay: `${index * 100}ms`,
-          }}
+          className={`flex items-center gap-3 bg-card/90 backdrop-blur-md border border-border/60 px-4 py-2.5 rounded-full animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+            index === 0
+              ? "animate-delay-0"
+              : index === 1
+              ? "animate-delay-150"
+              : "animate-delay-300"
+          }`}
         >
-          <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+          <Loader2 className="w-4 h-4 text-primary animate-spin" />
           <div className="flex flex-col">
-            <span className="text-xs font-medium text-slate-100">
+            <span className="text-xs font-medium text-foreground">
               {process.name}
             </span>
-            <span className="text-[10px] text-slate-400 leading-none">
+            <span className="text-[10px] text-muted-foreground leading-none">
               Processing...
             </span>
           </div>

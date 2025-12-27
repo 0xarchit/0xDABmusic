@@ -5,9 +5,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -35,21 +37,29 @@ func (s *DABService) logResponse(resp *http.Response, err error) {
 }
 
 func (s *DABService) Login(email, password string) (string, error) {
-	url := fmt.Sprintf("%s/auth/login", s.config.DABAPIBase)
+	base := resolveDABAPIBase(s.config)
+	endpoint := fmt.Sprintf("%s/auth/login", base)
 	payload := map[string]string{
 		"email":    email,
 		"password": password,
 	}
 	data, _ := json.Marshal(payload)
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(data))
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337.0.0.0 Safari/537.36")
-	req.Header.Set("Origin", "https://dabmusic.xyz")
-	req.Header.Set("Referer", "https://dabmusic.xyz/")
+	origin := originFromBase(base)
+	if origin != "" {
+		req.Header.Set("Origin", origin)
+		req.Header.Set("Referer", origin+"/")
+	} else {
+		req.Header.Del("Origin")
+		req.Header.Del("Referer")
+	}
 
 	s.logRequest(req)
 	resp, err := s.client.Do(req)
@@ -60,6 +70,19 @@ func (s *DABService) Login(email, password string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		msg := strings.TrimSpace(string(b))
+		ct := strings.ToLower(resp.Header.Get("Content-Type"))
+		lower := strings.ToLower(msg)
+		if resp.StatusCode == 403 && (strings.Contains(lower, "just a moment") || strings.Contains(lower, "cf-") || strings.Contains(lower, "cloudflare")) {
+			return "", fmt.Errorf("login blocked by Cloudflare at %s. Set BASE to a DAB API endpoint that doesn't require a browser challenge", base)
+		}
+		if strings.Contains(ct, "text/html") || strings.HasPrefix(lower, "<!doctype") || strings.HasPrefix(lower, "<html") {
+			return "", fmt.Errorf("login failed with status: %d", resp.StatusCode)
+		}
+		if msg != "" {
+			return "", fmt.Errorf("login failed with status: %d: %s", resp.StatusCode, msg)
+		}
 		return "", fmt.Errorf("login failed with status: %d", resp.StatusCode)
 	}
 
@@ -106,7 +129,8 @@ func (s *DABService) Search(query string) ([]DABTrack, error) {
 
 	time.Sleep(600 * time.Millisecond)
 
-	u, err := url.Parse(s.config.DABAPIBase + "/search")
+	base := resolveDABAPIBase(s.config)
+	u, err := url.Parse(base + "/search")
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +196,8 @@ func (s *DABService) GetStreamURL(trackID interface{}) (string, error) {
 		}
 	}
 
-	url := fmt.Sprintf("%s/stream?trackId=%s", s.config.DABAPIBase, idStr)
+	base := resolveDABAPIBase(s.config)
+	url := fmt.Sprintf("%s/stream?trackId=%s", base, idStr)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -213,7 +238,7 @@ func (s *DABService) GetStreamURL(trackID interface{}) (string, error) {
 }
 
 func (s *DABService) GetAlbumInfo(albumID string) (interface{}, error) {
-	url := fmt.Sprintf("%s/api/album?albumId=%s", s.config.DABAPIBase, albumID)
+	url := fmt.Sprintf("%s/api/album?albumId=%s", resolveDABAPIBase(s.config), albumID)
 	return s.fetchJSON(url)
 }
 
@@ -267,14 +292,14 @@ type FavoritesResponse struct {
 }
 
 func (s *DABService) GetFavorites() ([]DABTrack, error) {
-	url := fmt.Sprintf("%s/favorites", s.config.DABAPIBase)
+	url := fmt.Sprintf("%s/favorites", resolveDABAPIBase(s.config))
 	var result FavoritesResponse
 	err := s.fetchJSONInto(url, &result)
 	return result.Favorites, err
 }
 
 func (s *DABService) AddToFavorites(track DABTrack) error {
-	url := fmt.Sprintf("%s/favorites", s.config.DABAPIBase)
+	url := fmt.Sprintf("%s/favorites", resolveDABAPIBase(s.config))
 	payload := map[string]interface{}{
 		"track": track,
 	}
@@ -283,7 +308,7 @@ func (s *DABService) AddToFavorites(track DABTrack) error {
 }
 
 func (s *DABService) RemoveFromFavorites(trackID string) error {
-	url := fmt.Sprintf("%s/favorites?trackId=%s", s.config.DABAPIBase, trackID)
+	url := fmt.Sprintf("%s/favorites?trackId=%s", resolveDABAPIBase(s.config), trackID)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
@@ -307,7 +332,7 @@ func (s *DABService) RemoveFromFavorites(trackID string) error {
 }
 
 func (s *DABService) GetLibraries() ([]Library, error) {
-	url := fmt.Sprintf("%s/libraries", s.config.DABAPIBase)
+	url := fmt.Sprintf("%s/libraries", resolveDABAPIBase(s.config))
 	var result LibrariesResponse
 	err := s.fetchJSONInto(url, &result)
 	return result.Libraries, err
@@ -315,7 +340,7 @@ func (s *DABService) GetLibraries() ([]Library, error) {
 
 func (s *DABService) GetLyrics(artist, title string) (map[string]interface{}, error) {
 	url := fmt.Sprintf("%s/lyrics?artist=%s&title=%s",
-		s.config.DABAPIBase,
+		resolveDABAPIBase(s.config),
 		urlQueryEscape(artist),
 		urlQueryEscape(title))
 
@@ -325,7 +350,7 @@ func (s *DABService) GetLyrics(artist, title string) (map[string]interface{}, er
 }
 
 func (s *DABService) GetAlbumByID(albumID string) (map[string]interface{}, error) {
-	url := fmt.Sprintf("%s/album?albumId=%s", s.config.DABAPIBase, albumID)
+	url := fmt.Sprintf("%s/album?albumId=%s", resolveDABAPIBase(s.config), albumID)
 	var result map[string]interface{}
 	err := s.fetchJSONInto(url, &result)
 	return result, err
@@ -336,14 +361,14 @@ type QueueResponse struct {
 }
 
 func (s *DABService) GetQueue() ([]DABTrack, error) {
-	url := fmt.Sprintf("%s/queue", s.config.DABAPIBase)
+	url := fmt.Sprintf("%s/queue", resolveDABAPIBase(s.config))
 	var result QueueResponse
 	err := s.fetchJSONInto(url, &result)
 	return result.Queue, err
 }
 
 func (s *DABService) SaveQueue(queue []DABTrack) error {
-	url := fmt.Sprintf("%s/queue", s.config.DABAPIBase)
+	url := fmt.Sprintf("%s/queue", resolveDABAPIBase(s.config))
 	payload := map[string]interface{}{
 		"queue": queue,
 	}
@@ -352,7 +377,7 @@ func (s *DABService) SaveQueue(queue []DABTrack) error {
 }
 
 func (s *DABService) ClearQueue() error {
-	url := fmt.Sprintf("%s/queue", s.config.DABAPIBase)
+	url := fmt.Sprintf("%s/queue", resolveDABAPIBase(s.config))
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
@@ -374,7 +399,7 @@ func (s *DABService) ClearQueue() error {
 }
 
 func (s *DABService) UpdateLibrary(libraryID, name, description string, isPublic bool) error {
-	url := fmt.Sprintf("%s/libraries/%s", s.config.DABAPIBase, libraryID)
+	url := fmt.Sprintf("%s/libraries/%s", resolveDABAPIBase(s.config), libraryID)
 	payload := map[string]interface{}{
 		"name":        name,
 		"description": description,
@@ -404,7 +429,7 @@ func (s *DABService) UpdateLibrary(libraryID, name, description string, isPublic
 }
 
 func (s *DABService) DeleteLibrary(libraryID string) error {
-	url := fmt.Sprintf("%s/libraries/%s", s.config.DABAPIBase, libraryID)
+	url := fmt.Sprintf("%s/libraries/%s", resolveDABAPIBase(s.config), libraryID)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
@@ -426,7 +451,7 @@ func (s *DABService) DeleteLibrary(libraryID string) error {
 }
 
 func (s *DABService) GetCurrentUser() (map[string]interface{}, error) {
-	url := fmt.Sprintf("%s/auth/me", s.config.DABAPIBase)
+	url := fmt.Sprintf("%s/auth/me", resolveDABAPIBase(s.config))
 	var result map[string]interface{}
 	err := s.fetchJSONInto(url, &result)
 	return result, err
@@ -438,14 +463,15 @@ func urlQueryEscape(s string) string {
 
 func (s *DABService) GetLibraryDetails(libraryID string) (*LibraryDetailsResponse, error) {
 
-	url := fmt.Sprintf("%s/libraries/%s?limit=1000", s.config.DABAPIBase, libraryID)
+	base := resolveDABAPIBase(s.config)
+	url := fmt.Sprintf("%s/libraries/%s?limit=1000", base, libraryID)
 	var result LibraryDetailsWrapper
 	err := s.fetchJSONInto(url, &result)
 	if err == nil {
 		return &result.Library, nil
 	}
 
-	sharedUrl := fmt.Sprintf("%s/shared/library/%s?limit=1000", s.config.DABAPIBase, libraryID)
+	sharedUrl := fmt.Sprintf("%s/shared/library/%s?limit=1000", base, libraryID)
 	errShared := s.fetchJSONInto(sharedUrl, &result)
 	if errShared == nil {
 		return &result.Library, nil
@@ -460,8 +486,13 @@ func (s *DABService) fetchJSONInto(url string, target interface{}) error {
 		return err
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1337.0.0.0 Safari/537.36")
-	req.Header.Set("Origin", "https://dabmusic.xyz")
-	req.Header.Set("Referer", "https://dabmusic.xyz/")
+	if origin := originFromBase(resolveDABAPIBase(s.config)); origin != "" {
+		req.Header.Set("Origin", origin)
+		req.Header.Set("Referer", origin+"/")
+	} else {
+		req.Header.Del("Origin")
+		req.Header.Del("Referer")
+	}
 
 	if s.config.DABAuthToken != "" {
 		req.AddCookie(&http.Cookie{Name: "session", Value: s.config.DABAuthToken})
@@ -475,6 +506,16 @@ func (s *DABService) fetchJSONInto(url string, target interface{}) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		msg := strings.TrimSpace(string(b))
+		ct := strings.ToLower(resp.Header.Get("Content-Type"))
+		lower := strings.ToLower(msg)
+		if strings.Contains(ct, "text/html") || strings.HasPrefix(lower, "<!doctype") || strings.HasPrefix(lower, "<html") {
+			return fmt.Errorf("request failed: %d", resp.StatusCode)
+		}
+		if msg != "" {
+			return fmt.Errorf("request failed: %d: %s", resp.StatusCode, msg)
+		}
 		return fmt.Errorf("request failed: %d", resp.StatusCode)
 	}
 	return json.NewDecoder(resp.Body).Decode(target)

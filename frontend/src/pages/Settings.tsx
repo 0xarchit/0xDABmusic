@@ -12,6 +12,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 declare global {
   interface Window {
@@ -26,12 +33,22 @@ export function SettingsPage() {
   const [spotifyID, setSpotifyID] = useState("");
   const [spotifySecret, setSpotifySecret] = useState("");
   const [dabEmail, setDabEmail] = useState("");
+  const [dabApiBase, setDabApiBase] = useState("https://dabmusic.xyz/api");
   const [fuzzyScale, setFuzzyScale] = useState(85);
   const [maxConcurrency, setMaxConcurrency] = useState(1);
   const [maxCacheSize, setMaxCacheSize] = useState(1024);
   const [crossfadeDuration, setCrossfadeDuration] = useState(0);
   const [spotifyAuthenticated, setSpotifyAuthenticated] = useState(false);
   const [spotifyAuthUrl, setSpotifyAuthUrl] = useState("");
+
+  const normalizeApiBase = (value: string) => {
+    const v = String(value || "")
+      .trim()
+      .replace(/\/+$/, "");
+    if (!v) return "https://dabmusic.xyz/api";
+    if (v.endsWith("/api")) return v;
+    return `${v}/api`;
+  };
 
   useEffect(() => {
     if (window.go?.main?.App?.GetConfig) {
@@ -40,6 +57,10 @@ export function SettingsPage() {
           setSpotifyID(cfg.SPOTIFY_CLIENT_ID || "");
           setSpotifySecret(cfg.SPOTIFY_CLIENT_SECRET || "");
           setDabEmail(cfg.DAB_EMAIL || "");
+          const base = String(cfg.DAB_API_BASE || "").replace(/\/+$/, "");
+          if (base) {
+            setDabApiBase(base);
+          }
           setFuzzyScale(cfg.FUZZY_MATCH_SCALE || 85);
           setMaxConcurrency(cfg.MAX_CONCURRENCY || 1);
 
@@ -220,6 +241,48 @@ export function SettingsPage() {
                 </div>
               </div>
             ) : null}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>DAB Configuration</CardTitle>
+            <CardDescription>Select the DAB API base endpoint.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="dab-api-base">API Base</Label>
+              <Select
+                value={dabApiBase}
+                onValueChange={async (v) => {
+                  const next = normalizeApiBase(v);
+                  setDabApiBase(next);
+                  if (window.go?.main?.App?.SetDABAPIBase) {
+                    try {
+                      await window.go.main.App.SetDABAPIBase(next);
+                      toast.success("API base updated");
+                    } catch (e: any) {
+                      toast.error(String(e?.message || e));
+                    }
+                  }
+                }}
+              >
+                <SelectTrigger
+                  id="dab-api-base"
+                  className="bg-slate-900 border-slate-800 text-white"
+                >
+                  <SelectValue placeholder="Select API base" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="https://dabmusic.xyz/api">
+                    dabmusic.xyz (prod)
+                  </SelectItem>
+                  <SelectItem value="https://dab.yeet.su/api">
+                    dab.yeet.su (legacy)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 

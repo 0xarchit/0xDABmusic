@@ -166,6 +166,10 @@ export function SearchDAB(arg1) {
   return window['go']['main']['App']['SearchDAB'](arg1);
 }
 
+export function SetDABAPIBase(arg1) {
+  return window['go']['main']['App']['SetDABAPIBase'](arg1);
+}
+
 export function SpotifyLogin() {
   return window['go']['main']['App']['SpotifyLogin']();
 }

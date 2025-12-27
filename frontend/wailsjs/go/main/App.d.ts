@@ -84,6 +84,8 @@ export function SaveQueue(arg1:Array<services.DABTrack>):Promise<void>;
 
 export function SearchDAB(arg1:string):Promise<Array<services.DABTrack>>;
 
+export function SetDABAPIBase(arg1:string):Promise<void>;
+
 export function SpotifyLogin():Promise<string>;
 
 export function UpdateLibrary(arg1:string,arg2:string,arg3:string,arg4:boolean):Promise<void>;

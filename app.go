@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	stdruntime "runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -228,6 +229,14 @@ func (a *App) SaveGeneralSettings(fuzzyScale int, maxConcurrency int, maxCacheSi
 	a.config.MaxConcurrency = maxConcurrency
 	a.config.MaxCacheSize = maxCacheSize
 	a.cacheService.SetMaxSize(maxCacheSize)
+	return services.SaveConfig(a.config)
+}
+
+func (a *App) SetDABAPIBase(base string) error {
+	a.config.DABAPIBase = strings.TrimSpace(base)
+	a.config.DABAuthToken = ""
+	a.config.DABEmail = ""
+	a.config.DABPassword = ""
 	return services.SaveConfig(a.config)
 }
 

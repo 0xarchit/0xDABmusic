@@ -6,7 +6,7 @@ import (
 )
 
 func (s *DABService) VerifyToken(token string) bool {
-	url := fmt.Sprintf("%s/auth/me", s.config.DABAPIBase)
+	url := fmt.Sprintf("%s/auth/me", resolveDABAPIBase(s.config))
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return false
