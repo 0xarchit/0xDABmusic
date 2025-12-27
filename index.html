@@ -60,7 +60,7 @@
       position: relative;
     }
 
-    /* Professional Background Patterns */
+    
     body::before {
       content: "";
       position: fixed;
@@ -98,7 +98,7 @@
       box-shadow: 0 0 10px var(--accent-color);
     }
 
-    /* Glow Spots (Trendy Background) */
+    
     .glow-spot {
       position: fixed;
       border-radius: 50%;
@@ -250,7 +250,7 @@
       color: white;
     }
 
-    /* Features Grid */
+    
     .features {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -594,7 +594,7 @@
   </div>
 
   <script>
-    // Custom Cursor
+    
     const cursor = document.querySelector('.cursor');
     const follower = document.querySelector('.cursor-follower');
     let mouseX = 0, mouseY = 0;
@@ -616,7 +616,7 @@
     }
     animateFollower();
 
-    // Hover Effects
+    
     const hoverables = document.querySelectorAll('a, button, .feature-card, .logo');
     hoverables.forEach(target => {
       target.addEventListener('mouseenter', () => {
@@ -633,7 +633,7 @@
       });
     });
 
-    // Magnetic Button
+    
     const magneticWrap = document.querySelector('.magnetic-wrap');
     const magneticBtn = magneticWrap.querySelector('.download-btn');
 
@@ -648,7 +648,7 @@
       magneticBtn.style.transform = 'translate(0, 0)';
     });
 
-    // Feature Card Mouse Tracking
+    
     document.querySelectorAll('.feature-card').forEach(card => {
       card.addEventListener('mousemove', e => {
         const rect = card.getBoundingClientRect();
@@ -659,24 +659,24 @@
       });
     });
 
-    // GitHub Integration
+    
     document.addEventListener('DOMContentLoaded', async () => {
       const repo = '0xarchit/0xDABmusic';
 
-      // Stars count
+      
       try {
         const res = await fetch(`https://api.github.com/repos/${repo}`);
         const data = await res.json();
         document.getElementById('starCount').textContent = data.stargazers_count;
       } catch (e) { document.getElementById('starCount').textContent = '-'; }
 
-      // Latest Release
+      
       try {
         const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
         const data = await res.json();
         document.getElementById('versionText').textContent = data.tag_name;
 
-        // Map Assets
+        
         const assets = data.assets;
         const links = {
           winBundle: assets.find(a => a.name.includes('windows_bundle') && a.name.endsWith('.zip')),
@@ -685,7 +685,7 @@
           arch: assets.find(a => a.name.includes('linux_arch') && a.name.endsWith('.zip'))
         };
 
-        // Default Window Button
+        
         const mainWin = links.winBundle;
         if (mainWin) document.getElementById('mainDownloadBtn').href = mainWin.browser_download_url;
 
